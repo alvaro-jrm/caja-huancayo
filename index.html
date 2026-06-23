@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CajaHuancayo Web</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .tab-btn.active { @apply border-blue-600 text-blue-600; }
+    .sse-event { animation: fadeIn 0.3s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; } }
+  </style>
+</head>
+<body class="bg-slate-100 min-h-screen font-sans">
+
+  <!-- ═══ HEADER ═══════════════════════════════════════════════════════ -->
+  <header class="bg-blue-900 text-white shadow-xl">
+    <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="text-3xl">🏦</span>
+        <div>
+          <h1 class="text-xl font-bold leading-tight">CajaHuancayo</h1>
+          <p class="text-blue-300 text-xs">Sistema Bancario Web Reactivo</p>
+        </div>
+      </div>
+      <div id="headerUser" class="hidden items-center gap-3">
+        <span id="headerEmail" class="text-sm text-blue-200"></span>
+        <button onclick="logout()"
+          class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-lg transition">
+          Cerrar sesión
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══ API URL CONFIG ════════════════════════════════════════════════ -->
+  <div class="max-w-5xl mx-auto px-6 pt-4">
+    <div class="bg-amber-50 border border-amber-300 rounded-lg px-4 py-2 flex items-center gap-3 text-sm">
+      <span class="text-amber-700 font-semibold whitespace-nowrap">🔌 API Base URL:</span>
+      <input id="apiBase" type="text" value="http://localhost:8080"
+        class="border border-amber-300 rounded px-2 py-1 text-sm flex-1 max-w-xs bg-white focus:outline-none focus:ring-2 focus:ring-amber-400" />
+      <span class="text-amber-600 text-xs">Cambiá esto por tu URL de Railway/Render en producción</span>
+    </div>
+  </div>
+
+  <!-- ═══ TABS ══════════════════════════════════════════════════════════ -->
+  <div class="max-w-5xl mx-auto px-6 mt-5">
+    <div class="flex gap-0 border-b border-gray-300">
+      <button onclick="showTab('auth')"     id="btn-auth"       class="tab-btn px-5 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-blue-600 transition active">Acceso</button>
+      <button onclick="showTab('perfil')"   id="btn-perfil"     class="tab-btn px-5 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-blue-600 transition">Perfil</button>
+      <button onclick="showTab('ops')"      id="btn-ops"        class="tab-btn px-5 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-blue-600 transition">Transferencias</button>
+      <button onclick="showTab('creditos')" id="btn-creditos"   class="tab-btn px-5 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-blue-600 transition">Créditos</button>
+      <button onclick="showTab('auditoria')"id="btn-auditoria"  class="tab-btn px-5 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-blue-600 transition">Auditoría SSE</button>
+    </div>
+
+    <!-- ─── TAB: ACCESO ──────────────────────────────────────────────── -->
+    <div id="tab-auth" class="tab-panel py-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- LOGIN -->
+        <div class="bg-white rounded-xl shadow p-6">
+          <h2 class="text-lg font-bold text-gray-800 mb-4">Iniciar sesión</h2>
+          <div class="space-y-3">
+            <input id="loginEmail" type="email" placeholder="Email"
+              class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+            <input id="loginPass" type="password" placeholder="Contraseña"
+              class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+            <button onclick="login()"
+              class="w-full bg-blue-700 hover:bg-blue-800 text-white rounded-lg py-2 text-sm font-semibold transition">
+              Ingresar
+            </button>
+          </div>
+          <div id="loginResp" class="mt-3 hidden"></div>
+        </div>
+
+        <!-- REGISTRO -->
+        <div class="bg-white rounded-xl shadow p-6">
+          <h2 class="text-lg font-bold text-gray-800 mb-4">Crear cuenta</h2>
+          <div class="space-y-3">
+            <input id="regEmail"    type="email"  placeholder="Email"         class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+            <input id="regPass"     type="password" placeholder="Contraseña"  class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+            <div class="grid grid-cols-2 gap-2">
+              <input id="regDni"      type="text"   placeholder="DNI (8 dígitos)"   class="border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+              <input id="regEdad"     type="number" placeholder="Edad"              class="border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+            </div>
+            <input id="regNombres"  type="text"   placeholder="Nombres"        class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+            <input id="regApellidos"type="text"   placeholder="Apellidos"      class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+            <input id="regIngresos" type="number" step="0.01" placeholder="Ingresos mensuales (S/)"
+              class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+            <button onclick="registro()"
+              class="w-full bg-green-600 hover:bg-green-700 text-white rounded-lg py-2 text-sm font-semibold transition">
+              Registrarse
+            </button>
+          </div>
+          <div id="regResp" class="mt-3 hidden"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── TAB: PERFIL ──────────────────────────────────────────────── -->
+    <div id="tab-perfil" class="tab-panel py-6 hidden">
+      <div class="bg-white rounded-xl shadow p-6 max-w-lg">
+        <h2 class="text-lg font-bold text-gray-800 mb-4">Mi Perfil</h2>
+        <button onclick="getPerfil()"
+          class="bg-blue-700 hover:bg-blue-800 text-white rounded-lg px-4 py-2 text-sm font-semibold mb-4 transition">
+          Cargar perfil
+        </button>
+        <div id="perfilCard" class="hidden space-y-2">
+          <div class="grid grid-cols-2 gap-3 text-sm">
+            <div class="bg-slate-50 rounded-lg p-3"><span class="text-gray-500 block text-xs">DNI</span><span id="pDni" class="font-semibold"></span></div>
+            <div class="bg-slate-50 rounded-lg p-3"><span class="text-gray-500 block text-xs">Edad</span><span id="pEdad" class="font-semibold"></span></div>
+            <div class="bg-slate-50 rounded-lg p-3 col-span-2"><span class="text-gray-500 block text-xs">Nombre completo</span><span id="pNombre" class="font-semibold"></span></div>
+            <div class="bg-slate-50 rounded-lg p-3 col-span-2"><span class="text-gray-500 block text-xs">Ingresos mensuales</span><span id="pIngresos" class="font-semibold text-green-700"></span></div>
+            <div class="bg-slate-50 rounded-lg p-3 col-span-2"><span class="text-gray-500 block text-xs">ID de Cliente</span><span id="pId" class="font-mono text-xs text-gray-600 break-all"></span></div>
+          </div>
+        </div>
+        <div id="perfilResp" class="hidden mt-3"></div>
+      </div>
+    </div>
+
+    <!-- ─── TAB: TRANSFERENCIAS ──────────────────────────────────────── -->
+    <div id="tab-ops" class="tab-panel py-6 hidden">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-xl shadow p-6">
+          <h2 class="text-lg font-bold text-gray-800 mb-4">Nueva Transferencia</h2>
+          <div class="space-y-3">
+            <div>
+              <label class="text-xs text-gray-500 font-medium">Cuenta Origen</label>
+              <input id="txOrigen" type="text" placeholder="Ej: 001-001234"
+                class="w-full border rounded-lg px-3 py-2 text-sm mt-1 focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 font-medium">Cuenta Destino</label>
+              <input id="txDestino" type="text" placeholder="Ej: 001-005678"
+                class="w-full border rounded-lg px-3 py-2 text-sm mt-1 focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 font-medium">Monto (S/)</label>
+              <input id="txMonto" type="number" step="0.01" min="0.01" placeholder="0.00"
+                class="w-full border rounded-lg px-3 py-2 text-sm mt-1 focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+            </div>
+            <button onclick="transferir()"
+              class="w-full bg-blue-700 hover:bg-blue-800 text-white rounded-lg py-2 text-sm font-semibold transition">
+              Realizar Transferencia
+            </button>
+          </div>
+          <div id="txResp" class="mt-3 hidden"></div>
+        </div>
+
+        <div class="bg-slate-50 rounded-xl p-5 border border-slate-200">
+          <h3 class="text-sm font-semibold text-gray-700 mb-3">ℹ️ Notas</h3>
+          <ul class="text-xs text-gray-600 space-y-2">
+            <li>• Transferencias ≥ S/ 10,000 se marcan automáticamente como alerta de auditoría.</li>
+            <li>• Solo cuentas en estado <span class="font-mono bg-green-100 text-green-700 px-1 rounded">ACTIVA</span> pueden operar.</li>
+            <li>• Las transferencias son atómicas: si falla cualquier paso, ninguna cuenta es modificada.</li>
+            <li>• El evento de auditoría se emite en tiempo real al stream SSE.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── TAB: CRÉDITOS ────────────────────────────────────────────── -->
+    <div id="tab-creditos" class="tab-panel py-6 hidden">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-xl shadow p-6">
+          <h2 class="text-lg font-bold text-gray-800 mb-4">Evaluar Solicitud de Crédito</h2>
+          <div class="space-y-3">
+            <div>
+              <label class="text-xs text-gray-500 font-medium">ID del Cliente (UUID)</label>
+              <input id="credClienteId" type="text" placeholder="Pega el ID del perfil"
+                class="w-full border rounded-lg px-3 py-2 text-sm mt-1 font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 font-medium">Monto Solicitado (S/)</label>
+              <input id="credMonto" type="number" step="0.01" placeholder="0.00"
+                class="w-full border rounded-lg px-3 py-2 text-sm mt-1 focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 font-medium">Plazo (meses)</label>
+              <input id="credPlazo" type="number" min="1" placeholder="12"
+                class="w-full border rounded-lg px-3 py-2 text-sm mt-1 focus:ring-2 focus:ring-blue-400 focus:outline-none" />
+            </div>
+            <div>
+              <label class="text-xs text-gray-500 font-medium">Tipo de Crédito</label>
+              <select id="credTipo" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 focus:ring-2 focus:ring-blue-400 focus:outline-none">
+                <option value="PERSONAL">PERSONAL</option>
+                <option value="PYME">PYME</option>
+              </select>
+            </div>
+            <button onclick="evaluarCredito()"
+              class="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-lg py-2 text-sm font-semibold transition">
+              Evaluar Solicitud
+            </button>
+          </div>
+          <div id="credResp" class="mt-3 hidden"></div>
+        </div>
+
+        <div class="bg-slate-50 rounded-xl p-5 border border-slate-200">
+          <h3 class="text-sm font-semibold text-gray-700 mb-3">📋 Criterios de evaluación</h3>
+          <div class="space-y-3 text-xs text-gray-600">
+            <div class="bg-white rounded p-3 border border-gray-200">
+              <p class="font-semibold text-gray-700 mb-1">PERSONAL</p>
+              <p>• Ingreso mínimo: S/ 1,200</p>
+              <p>• Monto máximo: 8× ingresos mensuales</p>
+            </div>
+            <div class="bg-white rounded p-3 border border-gray-200">
+              <p class="font-semibold text-gray-700 mb-1">PYME</p>
+              <p>• Ingreso mínimo: S/ 2,500</p>
+              <p>• Monto máximo: 15× ingresos mensuales</p>
+              <p>• Plazo máximo sin observación: 36 meses</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── TAB: AUDITORÍA SSE ───────────────────────────────────────── -->
+    <div id="tab-auditoria" class="tab-panel py-6 hidden">
+      <div class="bg-white rounded-xl shadow p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold text-gray-800">Monitor de Auditoría en Tiempo Real</h2>
+          <div class="flex gap-2">
+            <button onclick="startSSE()"
+              class="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1.5 rounded-lg transition">
+              ▶ Conectar SSE
+            </button>
+            <button onclick="stopSSE()"
+              class="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1.5 rounded-lg transition">
+              ■ Desconectar
+            </button>
+            <button onclick="document.getElementById('sseLog').innerHTML=''"
+              class="bg-gray-400 hover:bg-gray-500 text-white text-xs px-3 py-1.5 rounded-lg transition">
+              Limpiar
+            </button>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 mb-3">
+          <div id="sseDot" class="w-2.5 h-2.5 rounded-full bg-gray-400"></div>
+          <span id="sseStatus" class="text-xs text-gray-500">Desconectado</span>
+          <span class="text-xs text-gray-400 ml-2">⚠️ Requiere rol AUDITOR</span>
+        </div>
+        <div id="sseLog"
+          class="bg-slate-900 text-green-400 font-mono text-xs rounded-lg p-4 h-80 overflow-y-auto space-y-1">
+          <p class="text-slate-500">// Los eventos de transferencia aparecerán aquí en tiempo real...</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /max-w-5xl -->
+
+  <!-- ═══ TOAST ════════════════════════════════════════════════════════ -->
+  <div id="toast" class="fixed bottom-6 right-6 hidden z-50">
+    <div id="toastInner" class="px-4 py-3 rounded-xl shadow-xl text-white text-sm font-medium max-w-xs"></div>
+  </div>
+
+  <!-- ═══ SCRIPT ═══════════════════════════════════════════════════════ -->
+  <script>
+    // ── Estado global ────────────────────────────────────────────────
+    let token = localStorage.getItem('ch_token') || null;
+    let sseReader = null;
+
+    const api = () => document.getElementById('apiBase').value.replace(/\/$/, '');
+
+    // ── UI helpers ───────────────────────────────────────────────────
+    function showTab(name) {
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('active', 'border-blue-600', 'text-blue-600');
+        b.classList.add('text-gray-500', 'border-transparent');
+      });
+      document.getElementById('tab-' + name).classList.remove('hidden');
+      const btn = document.getElementById('btn-' + name);
+      btn.classList.add('border-blue-600', 'text-blue-600');
+      btn.classList.remove('text-gray-500', 'border-transparent');
+    }
+
+    function showToast(msg, ok = true) {
+      const t = document.getElementById('toast');
+      const i = document.getElementById('toastInner');
+      i.className = `px-4 py-3 rounded-xl shadow-xl text-white text-sm font-medium ${ok ? 'bg-green-600' : 'bg-red-600'}`;
+      i.textContent = msg;
+      t.classList.remove('hidden');
+      setTimeout(() => t.classList.add('hidden'), 3500);
+    }
+
+    function responseBox(elId, data, ok = true) {
+      const el = document.getElementById(elId);
+      el.classList.remove('hidden');
+      el.className = `mt-3 p-3 rounded-lg text-xs font-mono whitespace-pre-wrap break-all ${ok ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`;
+      el.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    }
+
+    function setLoggedIn(email) {
+      token = localStorage.getItem('ch_token');
+      const h = document.getElementById('headerUser');
+      h.classList.remove('hidden');
+      h.classList.add('flex');
+      document.getElementById('headerEmail').textContent = email;
+    }
+
+    function logout() {
+      localStorage.removeItem('ch_token');
+      localStorage.removeItem('ch_email');
+      token = null;
+      document.getElementById('headerUser').classList.add('hidden');
+      document.getElementById('headerUser').classList.remove('flex');
+      showToast('Sesión cerrada', true);
+      showTab('auth');
+    }
+
+    // Rehydrate si ya hay sesión guardada
+    window.addEventListener('load', () => {
+      showTab('auth');
+      const saved = localStorage.getItem('ch_email');
+      if (token && saved) setLoggedIn(saved);
+    });
+
+    // ── Fetch helper ─────────────────────────────────────────────────
+    async function apiFetch(path, method = 'GET', body = null) {
+      const headers = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const opts = { method, headers };
+      if (body) opts.body = JSON.stringify(body);
+      const res = await fetch(api() + path, opts);
+      const text = await res.text();
+      let json;
+      try { json = JSON.parse(text); } catch { json = text; }
+      return { ok: res.ok, status: res.status, data: json };
+    }
+
+    // ── AUTH ─────────────────────────────────────────────────────────
+    async function login() {
+      const email = document.getElementById('loginEmail').value.trim();
+      const pass  = document.getElementById('loginPass').value;
+      if (!email || !pass) { showToast('Completá email y contraseña', false); return; }
+      const r = await apiFetch('/api/auth/login', 'POST', { email, password: pass });
+      if (r.ok) {
+        localStorage.setItem('ch_token', r.data.token);
+        localStorage.setItem('ch_email', email);
+        token = r.data.token;
+        setLoggedIn(email);
+        showToast('¡Bienvenido, ' + email + '!');
+        responseBox('loginResp', r.data, true);
+      } else {
+        responseBox('loginResp', r.data, false);
+        showToast('Credenciales incorrectas', false);
+      }
+    }
+
+    async function registro() {
+      const body = {
+        email:             document.getElementById('regEmail').value.trim(),
+        password:          document.getElementById('regPass').value,
+        dni:               document.getElementById('regDni').value.trim(),
+        nombres:           document.getElementById('regNombres').value.trim(),
+        apellidos:         document.getElementById('regApellidos').value.trim(),
+        ingresosMensuales: parseFloat(document.getElementById('regIngresos').value) || 0,
+        edad:              parseInt(document.getElementById('regEdad').value) || 0,
+      };
+      if (!body.email || !body.password || !body.dni) {
+        showToast('Completá todos los campos obligatorios', false); return;
+      }
+      const r = await apiFetch('/api/auth/registro', 'POST', body);
+      if (r.ok) {
+        localStorage.setItem('ch_token', r.data.token);
+        localStorage.setItem('ch_email', body.email);
+        token = r.data.token;
+        setLoggedIn(body.email);
+        showToast('Cuenta creada exitosamente 🎉');
+        responseBox('regResp', r.data, true);
+      } else {
+        responseBox('regResp', r.data, false);
+        showToast(r.data?.message || 'Error en el registro', false);
+      }
+    }
+
+    // ── PERFIL ───────────────────────────────────────────────────────
+    async function getPerfil() {
+      if (!token) { showToast('Iniciá sesión primero', false); return; }
+      const r = await apiFetch('/api/perfil');
+      if (r.ok) {
+        const d = r.data;
+        document.getElementById('pDni').textContent     = d.dni;
+        document.getElementById('pNombre').textContent  = d.nombres + ' ' + d.apellidos;
+        document.getElementById('pEdad').textContent    = d.edad + ' años';
+        document.getElementById('pIngresos').textContent= 'S/ ' + d.ingresosMensuales?.toFixed(2);
+        document.getElementById('pId').textContent      = d.id;
+        document.getElementById('perfilCard').classList.remove('hidden');
+        document.getElementById('perfilResp').classList.add('hidden');
+        // Auto-fill créditos clienteId
+        document.getElementById('credClienteId').value = d.id;
+        showToast('Perfil cargado');
+      } else {
+        responseBox('perfilResp', r.data, false);
+        document.getElementById('perfilCard').classList.add('hidden');
+        showToast('No se pudo cargar el perfil', false);
+      }
+    }
+
+    // ── TRANSFERENCIA ─────────────────────────────────────────────────
+    async function transferir() {
+      if (!token) { showToast('Iniciá sesión primero', false); return; }
+      const body = {
+        cuentaOrigen:  document.getElementById('txOrigen').value.trim(),
+        cuentaDestino: document.getElementById('txDestino').value.trim(),
+        monto:         parseFloat(document.getElementById('txMonto').value),
+      };
+      if (!body.cuentaOrigen || !body.cuentaDestino || !body.monto) {
+        showToast('Completá todos los campos', false); return;
+      }
+      const r = await apiFetch('/api/operaciones/transferencia', 'POST', body);
+      responseBox('txResp', r.data, r.ok);
+      showToast(r.ok ? `Transferencia de S/ ${body.monto} completada ✓` : 'Error en la transferencia', r.ok);
+    }
+
+    // ── CRÉDITOS ─────────────────────────────────────────────────────
+    async function evaluarCredito() {
+      if (!token) { showToast('Iniciá sesión primero', false); return; }
+      const body = {
+        clienteId:       document.getElementById('credClienteId').value.trim(),
+        montoSolicitado: parseFloat(document.getElementById('credMonto').value),
+        plazoMeses:      parseInt(document.getElementById('credPlazo').value),
+        tipoCredito:     document.getElementById('credTipo').value,
+      };
+      if (!body.clienteId || !body.montoSolicitado) {
+        showToast('Completá clienteId y monto', false); return;
+      }
+      const r = await apiFetch('/api/creditos/evaluar', 'POST', body);
+      responseBox('credResp', r.data, r.ok);
+      if (r.ok) {
+        const estado = r.data.estado;
+        const colors = { APROBADO: true, RECHAZADO: false, OBSERVADO: null };
+        showToast(estado + ': ' + (r.data.resultado?.substring(0, 60) || ''), colors[estado] ?? true);
+      } else {
+        showToast('Error al evaluar crédito', false);
+      }
+    }
+
+    // ── SSE AUDITORÍA ─────────────────────────────────────────────────
+    async function startSSE() {
+      if (!token) { showToast('Iniciá sesión con rol AUDITOR primero', false); return; }
+      stopSSE();
+      const log   = document.getElementById('sseLog');
+      const dot   = document.getElementById('sseDot');
+      const label = document.getElementById('sseStatus');
+      dot.className   = 'w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse';
+      label.textContent = 'Conectado — esperando eventos...';
+      try {
+        const resp = await fetch(api() + '/api/auditoria/stream', {
+          headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'text/event-stream' }
+        });
+        if (!resp.ok) {
+          dot.className = 'w-2.5 h-2.5 rounded-full bg-red-500';
+          label.textContent = 'Error ' + resp.status + ' — ¿tenés rol AUDITOR?';
+          return;
+        }
+        sseReader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        const read = async () => {
+          while (true) {
+            const { done, value } = await sseReader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+            const parts = buffer.split('\n\n');
+            buffer = parts.pop();
+            for (const part of parts) {
+              const dataLine = part.split('\n').find(l => l.startsWith('data:'));
+              if (!dataLine) continue;
+              const json = dataLine.replace(/^data:\s*/, '');
+              try {
+                const evt = JSON.parse(json);
+                const isAlert = evt.tipo === 'ALERTA_MONTO_ALTO';
+                const div = document.createElement('div');
+                div.className = 'sse-event ' + (isAlert ? 'text-yellow-400' : 'text-green-400');
+                div.textContent = `[${new Date().toLocaleTimeString()}] ${evt.tipo} | ${evt.cuentaOrigen} → ${evt.cuentaDestino} | S/ ${evt.monto}`;
+                log.appendChild(div);
+                log.scrollTop = log.scrollHeight;
+              } catch {}
+            }
+          }
+          dot.className = 'w-2.5 h-2.5 rounded-full bg-gray-400';
+          label.textContent = 'Desconectado';
+        };
+        read();
+      } catch (e) {
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-red-500';
+        label.textContent = 'Error de conexión: ' + e.message;
+      }
+    }
+
+    function stopSSE() {
+      if (sseReader) { sseReader.cancel(); sseReader = null; }
+      document.getElementById('sseDot').className    = 'w-2.5 h-2.5 rounded-full bg-gray-400';
+      document.getElementById('sseStatus').textContent = 'Desconectado';
+    }
+  </script>
+</body>
+</html>
