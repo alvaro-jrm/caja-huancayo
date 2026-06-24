@@ -353,7 +353,25 @@
           >
             <div>
               <h2 class="text-2xl font-extrabold text-ink">
-                Bienvenido de nuevo 👋
+                Bienvenido de nuevo
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#D6001C"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  class="lucide lucide-piggy-bank-icon lucide-piggy-bank"
+                >
+                  <path
+                    d="M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z"
+                  />
+                  <path d="M16 10h.01" />
+                  <path d="M2 8v1a2 2 0 0 0 2 2h1" />
+                </svg>
               </h2>
               <p class="text-graphite/60 text-sm mt-1">
                 Ingresa tus credenciales para continuar.
@@ -1052,9 +1070,7 @@
         <!-- ─── SECCIÓN: OPERACIONES (historial de movimientos) ─────── -->
         <section id="sec-operaciones" class="app-sec hidden-soft">
           <div class="rounded-xl2 bg-white shadow-card p-6 sm:p-7">
-            <div
-              class="flex flex-wrap items-center justify-between gap-3 mb-5"
-            >
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
               <div>
                 <h2 class="text-xl font-extrabold text-ink">Mis operaciones</h2>
                 <p class="text-graphite/60 text-sm mt-1">
@@ -2027,7 +2043,8 @@
             .charAt(0)
             .toUpperCase();
           $("destNombre").textContent = data.titular;
-          $("destDetalle").textContent = `Cuenta ${data.numeroCuenta} · ${data.estado}`;
+          $("destDetalle").textContent =
+            `Cuenta ${data.numeroCuenta} · ${data.estado}`;
         } else {
           box.className =
             "flex items-center gap-3 rounded-xl border p-3 border-brand/30 bg-brand-soft";
@@ -2262,7 +2279,9 @@
           show($("opLoading"));
         }
 
-        const r = await apiFetch("/api/operaciones/movimientos/" + cuenta.numeroCuenta);
+        const r = await apiFetch(
+          "/api/operaciones/movimientos/" + cuenta.numeroCuenta,
+        );
         hide($("opLoading"));
 
         if (!r.ok || !Array.isArray(r.data)) {
