@@ -3,497 +3,1235 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CajaHuancayo Web</title>
+  <title>Caja Huancayo · Banca en Línea</title>
+
+  <!-- Tailwind + fuente moderna estilo FinTech -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <script>
+    // ─── Configuración del tema corporativo Caja Huancayo ──────────────────
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand:  { DEFAULT: '#D6001C', dark: '#B00018', light: '#FF3052', soft: '#FDECEE' },
+            ink:    '#1A1A1A',
+            graphite:'#2D3748',
+            canvas: '#F4F6F8',
+          },
+          fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+          borderRadius: { xl2: '14px' },
+          boxShadow: {
+            card: '0 1px 3px rgba(16,24,40,0.06), 0 1px 2px rgba(16,24,40,0.04)',
+            soft: '0 4px 20px rgba(16,24,40,0.08)',
+            lift: '0 10px 30px rgba(16,24,40,0.12)',
+            brand:'0 8px 24px rgba(214,0,28,0.28)',
+          },
+        }
+      }
+    }
+  </script>
+
   <style>
-    .tab-btn.active { @apply border-blue-600 text-blue-600; }
-    .sse-event { animation: fadeIn 0.3s ease; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; } }
+    :root { --brand:#D6001C; }
+    * { font-family: 'Inter', system-ui, sans-serif; }
+    body { background:#F4F6F8; color:#1A1A1A; -webkit-font-smoothing:antialiased; }
+
+    /* Transiciones suaves globales en elementos interactivos */
+    button, a, input, select, .transi { transition: all .3s ease; }
+
+    /* Animaciones */
+    @keyframes fadeUp { from { opacity:0; transform:translateY(12px);} to { opacity:1; transform:none; } }
+    @keyframes fadeIn { from { opacity:0;} to { opacity:1; } }
+    @keyframes pop    { 0%{transform:scale(.85);opacity:0;} 60%{transform:scale(1.04);} 100%{transform:scale(1);opacity:1;} }
+    @keyframes shimmer{ 0%{background-position:-400px 0;} 100%{background-position:400px 0;} }
+    @keyframes spin   { to { transform:rotate(360deg);} }
+    @keyframes pulseDot{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
+    @keyframes shake  { 10%,90%{transform:translateX(-1px);} 20%,80%{transform:translateX(2px);} 30%,50%,70%{transform:translateX(-4px);} 40%,60%{transform:translateX(4px);} }
+
+    .fade-up   { animation: fadeUp .5s ease both; }
+    .fade-in   { animation: fadeIn .4s ease both; }
+    .pop       { animation: pop .45s cubic-bezier(.2,.9,.3,1.2) both; }
+    .shake     { animation: shake .4s ease; }
+    .spin      { animation: spin .8s linear infinite; }
+
+    /* Skeleton shimmer para carga del saldo */
+    .skeleton {
+      background:#e9edf2;
+      background-image:linear-gradient(90deg,#e9edf2 0px,#f3f6f9 80px,#e9edf2 160px);
+      background-size:600px;
+      animation: shimmer 1.4s infinite linear;
+      border-radius:8px;
+    }
+
+    /* Input base */
+    .field {
+      width:100%; border:1.5px solid #E2E8F0; border-radius:10px;
+      padding:.7rem .9rem; font-size:.9rem; background:#fff; color:#1A1A1A; outline:none;
+    }
+    .field::placeholder { color:#A0AEC0; }
+    .field:focus { border-color:var(--brand); box-shadow:0 0 0 4px rgba(214,0,28,.10); }
+    .field.error { border-color:var(--brand); box-shadow:0 0 0 4px rgba(214,0,28,.10); }
+
+    /* Botón primario corporativo */
+    .btn-brand {
+      background:var(--brand); color:#fff; font-weight:600; border-radius:10px;
+      padding:.7rem 1rem; font-size:.9rem; box-shadow:0 6px 18px rgba(214,0,28,.25);
+    }
+    .btn-brand:hover:not(:disabled) { background:#B00018; transform:translateY(-1px); box-shadow:0 10px 24px rgba(214,0,28,.32); }
+    .btn-brand:active:not(:disabled){ transform:translateY(0); }
+    .btn-brand:disabled { opacity:.45; cursor:not-allowed; box-shadow:none; }
+
+    .btn-ghost {
+      background:#fff; color:#2D3748; font-weight:600; border:1.5px solid #E2E8F0;
+      border-radius:10px; padding:.65rem 1rem; font-size:.85rem;
+    }
+    .btn-ghost:hover { border-color:#CBD5E0; background:#F8FAFC; }
+
+    /* Scrollbar fina */
+    ::-webkit-scrollbar { width:8px; height:8px; }
+    ::-webkit-scrollbar-thumb { background:#CBD5E0; border-radius:8px; }
+    ::-webkit-scrollbar-thumb:hover { background:#A0AEC0; }
+
+    /* !important para ganarle a las utilidades display de Tailwind (.flex, etc.) */
+    .hidden-soft { display:none !important; }
   </style>
 </head>
-<body class="bg-slate-100 min-h-screen font-sans">
 
-  <!-- ═══ HEADER ═══════════════════════════════════════════════════════ -->
-  <header class="bg-blue-900 text-white shadow-xl">
-    <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <span class="text-3xl">🏦</span>
+<body class="min-h-screen">
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     VISTA 1 · AUTENTICACIÓN (Login / Registro)
+════════════════════════════════════════════════════════════════════════ -->
+<div id="authView" class="min-h-screen grid lg:grid-cols-2">
+
+  <!-- Panel de marca (izquierda) -->
+  <div class="relative hidden lg:flex flex-col justify-between p-12 text-white overflow-hidden"
+       style="background:linear-gradient(150deg,#D6001C 0%,#9E0014 100%);">
+    <!-- Formas decorativas -->
+    <div class="absolute -top-24 -right-24 w-96 h-96 rounded-full" style="background:rgba(255,255,255,.07)"></div>
+    <div class="absolute bottom-10 -left-20 w-80 h-80 rounded-full" style="background:rgba(255,255,255,.05)"></div>
+
+    <div class="relative flex items-center gap-3">
+      <div class="w-11 h-11 rounded-xl bg-white/15 backdrop-blur flex items-center justify-center text-2xl">🏦</div>
+      <div>
+        <p class="font-extrabold text-lg leading-none">Caja Huancayo</p>
+        <p class="text-white/70 text-xs mt-1">Banca Digital</p>
+      </div>
+    </div>
+
+    <div class="relative max-w-md">
+      <h1 class="text-4xl font-extrabold leading-tight">Tu dinero,<br/>siempre contigo.</h1>
+      <p class="text-white/80 mt-4 text-[15px] leading-relaxed">
+        Abre tu cuenta en segundos, transfiere por número de cuenta o celular y
+        controla tu saldo en tiempo real. Seguro, rápido y sin complicaciones.
+      </p>
+      <div class="flex gap-6 mt-8">
+        <div><p class="text-2xl font-extrabold">100%</p><p class="text-white/70 text-xs">Digital</p></div>
+        <div><p class="text-2xl font-extrabold">S/ 0</p><p class="text-white/70 text-xs">Apertura</p></div>
+        <div><p class="text-2xl font-extrabold">24/7</p><p class="text-white/70 text-xs">Disponible</p></div>
+      </div>
+    </div>
+
+    <p class="relative text-white/50 text-xs">© 2025 Caja Municipal de Ahorro y Crédito Huancayo</p>
+  </div>
+
+  <!-- Panel de formularios (derecha) -->
+  <div class="flex items-center justify-center p-6 sm:p-10 bg-white">
+    <div class="w-full max-w-md fade-up">
+
+      <!-- Logo móvil -->
+      <div class="lg:hidden flex items-center gap-2 mb-8 justify-center">
+        <div class="w-10 h-10 rounded-xl bg-brand flex items-center justify-center text-xl text-white">🏦</div>
+        <span class="font-extrabold text-lg text-ink">Caja Huancayo</span>
+      </div>
+
+      <!-- Switcher Login / Registro -->
+      <div class="flex p-1 bg-canvas rounded-xl mb-7">
+        <button id="swLogin" onclick="setAuthMode('login')"
+          class="flex-1 py-2.5 text-sm font-semibold rounded-lg bg-white shadow-card text-brand">Iniciar sesión</button>
+        <button id="swReg" onclick="setAuthMode('reg')"
+          class="flex-1 py-2.5 text-sm font-semibold rounded-lg text-graphite">Crear cuenta</button>
+      </div>
+
+      <!-- ── FORM LOGIN ─────────────────────────────────────────── -->
+      <form id="formLogin" onsubmit="event.preventDefault(); login();" class="space-y-4">
         <div>
-          <h1 class="text-xl font-bold leading-tight">CajaHuancayo</h1>
-          <p class="text-blue-300 text-xs">Sistema Bancario Web Reactivo</p>
+          <h2 class="text-2xl font-extrabold text-ink">Bienvenido de nuevo 👋</h2>
+          <p class="text-graphite/60 text-sm mt-1">Ingresa tus credenciales para continuar.</p>
+        </div>
+
+        <div>
+          <label class="text-xs font-semibold text-graphite">Correo electrónico</label>
+          <input id="loginEmail" type="email" autocomplete="email" placeholder="tucorreo@ejemplo.com" class="field mt-1.5" />
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-graphite">Contraseña</label>
+          <div class="relative mt-1.5">
+            <input id="loginPass" type="password" autocomplete="current-password" placeholder="••••••••" class="field pr-11" />
+            <button type="button" onclick="togglePass('loginPass', this)"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-graphite/50 text-sm">👁</button>
+          </div>
+        </div>
+
+        <p id="loginError" class="hidden-soft text-brand text-sm font-medium bg-brand-soft border border-brand/20 rounded-lg px-3 py-2"></p>
+
+        <button type="submit" id="loginBtn" class="btn-brand w-full flex items-center justify-center gap-2">
+          <span id="loginBtnText">Ingresar</span>
+          <span id="loginSpin" class="hidden-soft w-4 h-4 border-2 border-white/40 border-t-white rounded-full spin"></span>
+        </button>
+      </form>
+
+      <!-- ── FORM REGISTRO ──────────────────────────────────────── -->
+      <form id="formReg" onsubmit="event.preventDefault(); registro();" class="space-y-4 hidden-soft">
+        <div>
+          <h2 class="text-2xl font-extrabold text-ink">Crea tu cuenta</h2>
+          <p class="text-graphite/60 text-sm mt-1">Te generaremos una cuenta bancaria al instante.</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-semibold text-graphite">Nombres</label>
+            <input id="regNombres" type="text" placeholder="Álvaro" class="field mt-1.5" />
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-graphite">Apellidos</label>
+            <input id="regApellidos" type="text" placeholder="Pérez" class="field mt-1.5" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="text-xs font-semibold text-graphite">DNI</label>
+            <input id="regDni" type="text" inputmode="numeric" maxlength="8" placeholder="12345678" class="field mt-1.5" />
+          </div>
+          <div>
+            <label class="text-xs font-semibold text-graphite">Edad</label>
+            <input id="regEdad" type="number" min="18" placeholder="25" class="field mt-1.5" />
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs font-semibold text-graphite">Ingresos mensuales (S/)</label>
+          <input id="regIngresos" type="number" step="0.01" min="0" placeholder="1500.00" class="field mt-1.5" />
+        </div>
+
+        <div>
+          <label class="text-xs font-semibold text-graphite">Correo electrónico</label>
+          <input id="regEmail" type="email" placeholder="tucorreo@ejemplo.com" class="field mt-1.5" />
+        </div>
+
+        <div>
+          <label class="text-xs font-semibold text-graphite">Contraseña</label>
+          <div class="relative mt-1.5">
+            <input id="regPass" type="password" placeholder="Mínimo 6 caracteres" class="field pr-11" />
+            <button type="button" onclick="togglePass('regPass', this)"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-graphite/50 text-sm">👁</button>
+          </div>
+        </div>
+
+        <p id="regError" class="hidden-soft text-brand text-sm font-medium bg-brand-soft border border-brand/20 rounded-lg px-3 py-2"></p>
+
+        <button type="submit" id="regBtn" class="btn-brand w-full flex items-center justify-center gap-2">
+          <span id="regBtnText">Crear mi cuenta</span>
+          <span id="regSpin" class="hidden-soft w-4 h-4 border-2 border-white/40 border-t-white rounded-full spin"></span>
+        </button>
+
+        <p class="text-center text-xs text-graphite/50">
+          Al registrarte aceptas los Términos y la Política de Privacidad.
+        </p>
+      </form>
+
+      <!-- Config API (discreto) -->
+      <div class="mt-8 pt-5 border-t border-gray-100">
+        <button onclick="document.getElementById('apiCfg').classList.toggle('hidden-soft')"
+          class="text-xs text-graphite/40 hover:text-graphite/70">⚙ Configuración avanzada</button>
+        <div id="apiCfg" class="hidden-soft mt-2">
+          <label class="text-xs font-semibold text-graphite">URL del backend</label>
+          <input id="apiBase" class="field mt-1.5 text-xs" />
         </div>
       </div>
-      <div id="headerUser" class="hidden items-center gap-3">
-        <span id="headerEmail" class="text-sm text-blue-200"></span>
-        <button onclick="logout()"
-          class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-1.5 rounded-lg transition">
-          Cerrar sesión
-        </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     VISTA 2 · APLICACIÓN (post-login)
+════════════════════════════════════════════════════════════════════════ -->
+<div id="appView" class="hidden-soft min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="bg-white border-b border-gray-100 sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-brand flex items-center justify-center text-lg text-white">🏦</div>
+        <div class="leading-none">
+          <p class="font-extrabold text-ink text-[15px]">Caja Huancayo</p>
+          <p class="text-graphite/50 text-[11px] mt-0.5">Banca en línea</p>
+        </div>
       </div>
+
+      <div class="flex items-center gap-3">
+        <div class="text-right hidden sm:block">
+          <p id="hdrName" class="text-sm font-semibold text-ink leading-none"></p>
+          <p id="hdrEmail" class="text-[11px] text-graphite/50 mt-1"></p>
+        </div>
+        <div id="hdrAvatar" class="w-9 h-9 rounded-full bg-brand-soft text-brand font-bold flex items-center justify-center text-sm"></div>
+        <button onclick="logout()" class="btn-ghost !py-2 !px-3 text-xs" title="Cerrar sesión">Salir</button>
+      </div>
+    </div>
+
+    <!-- Navegación -->
+    <div class="max-w-6xl mx-auto px-5">
+      <nav class="flex gap-1 -mb-px overflow-x-auto">
+        <button onclick="nav('dashboard')" data-nav="dashboard" class="nav-tab">🏠 Inicio</button>
+        <button onclick="nav('transfer')"  data-nav="transfer"  class="nav-tab">💸 Transferir</button>
+        <button onclick="nav('creditos')"  data-nav="creditos"  class="nav-tab">📈 Créditos</button>
+        <button onclick="nav('monitor')"   data-nav="monitor"   class="nav-tab">🛡️ Monitor</button>
+      </nav>
     </div>
   </header>
 
-  <!-- ═══ API URL CONFIG ════════════════════════════════════════════════ -->
-  <div class="max-w-5xl mx-auto px-6 pt-4">
-    <div class="bg-amber-50 border border-amber-300 rounded-lg px-4 py-2 flex items-center gap-3 text-sm">
-      <span class="text-amber-700 font-semibold whitespace-nowrap">🔌 API Base URL:</span>
-      <input id="apiBase" value="https://caja-huancayo-backend-production.up.railway.app"
-        class="border border-amber-300 rounded px-2 py-1 text-sm flex-1 max-w-xs bg-white focus:outline-none focus:ring-2 focus:ring-amber-400" />
-      <span class="text-amber-600 text-xs">Cambiá esto por tu URL de Railway/Render en producción</span>
-    </div>
-  </div>
+  <main class="flex-1 max-w-6xl w-full mx-auto px-5 py-7">
 
-  <!-- ═══ TABS ══════════════════════════════════════════════════════════ -->
-  <div class="max-w-5xl mx-auto px-6 mt-5">
-    <div class="flex gap-0 border-b border-gray-300">
-      <button onclick="showTab('auth')"     id="btn-auth"       class="tab-btn px-5 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-blue-600 transition active">Acceso</button>
-      <button onclick="showTab('perfil')"   id="btn-perfil"     class="tab-btn px-5 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-blue-600 transition">Perfil</button>
-      <button onclick="showTab('ops')"      id="btn-ops"        class="tab-btn px-5 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-blue-600 transition">Transferencias</button>
-      <button onclick="showTab('creditos')" id="btn-creditos"   class="tab-btn px-5 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-blue-600 transition">Créditos</button>
-      <button onclick="showTab('auditoria')"id="btn-auditoria"  class="tab-btn px-5 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-blue-600 transition">Auditoría SSE</button>
-    </div>
+    <!-- ─── SECCIÓN: DASHBOARD ──────────────────────────────────── -->
+    <section id="sec-dashboard" class="app-sec space-y-6">
 
-    <!-- ─── TAB: ACCESO ──────────────────────────────────────────────── -->
-    <div id="tab-auth" class="tab-panel py-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="grid lg:grid-cols-3 gap-6">
 
-        <!-- LOGIN -->
-        <div class="bg-white rounded-xl shadow p-6">
-          <h2 class="text-lg font-bold text-gray-800 mb-4">Iniciar sesión</h2>
-          <div class="space-y-3">
-            <input id="loginEmail" type="email" placeholder="Email"
-              class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none" />
-            <input id="loginPass" type="password" placeholder="Contraseña"
-              class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none" />
-            <button onclick="login()"
-              class="w-full bg-blue-700 hover:bg-blue-800 text-white rounded-lg py-2 text-sm font-semibold transition">
-              Ingresar
+        <!-- Tarjeta de saldo (estilo tarjeta bancaria) -->
+        <div class="lg:col-span-2 relative rounded-xl2 p-7 text-white overflow-hidden shadow-brand"
+             style="background:linear-gradient(135deg,#D6001C 0%,#8E0013 100%);">
+          <div class="absolute -top-16 -right-10 w-56 h-56 rounded-full" style="background:rgba(255,255,255,.08)"></div>
+          <div class="absolute -bottom-20 right-20 w-48 h-48 rounded-full" style="background:rgba(255,255,255,.06)"></div>
+
+          <div class="relative flex items-start justify-between">
+            <div>
+              <p class="text-white/70 text-sm font-medium">Saldo disponible</p>
+              <div id="balanceWrap" class="mt-2">
+                <div id="balanceSkel" class="skeleton h-10 w-52"></div>
+                <h2 id="balanceAmount" class="hidden-soft text-4xl sm:text-5xl font-extrabold tracking-tight"></h2>
+              </div>
+            </div>
+            <button onclick="loadDashboard(true)" title="Actualizar"
+              class="w-9 h-9 rounded-lg bg-white/15 hover:bg-white/25 flex items-center justify-center text-lg">⟳</button>
+          </div>
+
+          <div class="relative mt-8 flex items-end justify-between">
+            <div>
+              <p class="text-white/60 text-xs">Número de cuenta</p>
+              <p id="cardNumero" class="font-mono text-lg font-semibold tracking-widest mt-0.5">— — — — — —</p>
+            </div>
+            <div class="text-right">
+              <p class="text-white/60 text-xs">Estado</p>
+              <span id="cardEstado" class="inline-block mt-1 text-xs font-semibold bg-white/20 px-2.5 py-1 rounded-full">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Acciones rápidas -->
+        <div class="rounded-xl2 bg-white shadow-card p-6 flex flex-col">
+          <p class="font-bold text-ink">Acciones rápidas</p>
+          <div class="grid grid-cols-2 gap-3 mt-4">
+            <button onclick="nav('transfer')" class="rounded-xl border border-gray-100 hover:border-brand/40 hover:bg-brand-soft p-4 text-center group">
+              <div class="text-2xl">💸</div>
+              <p class="text-xs font-semibold text-graphite mt-1.5 group-hover:text-brand">Transferir</p>
             </button>
-          </div>
-          <div id="loginResp" class="mt-3 hidden"></div>
-        </div>
-
-        <!-- REGISTRO -->
-        <div class="bg-white rounded-xl shadow p-6">
-          <h2 class="text-lg font-bold text-gray-800 mb-4">Crear cuenta</h2>
-          <div class="space-y-3">
-            <input id="regEmail"    type="email"  placeholder="Email"         class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none" />
-            <input id="regPass"     type="password" placeholder="Contraseña"  class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none" />
-            <div class="grid grid-cols-2 gap-2">
-              <input id="regDni"      type="text"   placeholder="DNI (8 dígitos)"   class="border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none" />
-              <input id="regEdad"     type="number" placeholder="Edad"              class="border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none" />
-            </div>
-            <input id="regNombres"  type="text"   placeholder="Nombres"        class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none" />
-            <input id="regApellidos"type="text"   placeholder="Apellidos"      class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none" />
-            <input id="regIngresos" type="number" step="0.01" placeholder="Ingresos mensuales (S/)"
-              class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-400 focus:outline-none" />
-            <button onclick="registro()"
-              class="w-full bg-green-600 hover:bg-green-700 text-white rounded-lg py-2 text-sm font-semibold transition">
-              Registrarse
+            <button onclick="openCelularModal()" class="rounded-xl border border-gray-100 hover:border-brand/40 hover:bg-brand-soft p-4 text-center group">
+              <div class="text-2xl">📱</div>
+              <p class="text-xs font-semibold text-graphite mt-1.5 group-hover:text-brand">Mi celular</p>
             </button>
-          </div>
-          <div id="regResp" class="mt-3 hidden"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ─── TAB: PERFIL ──────────────────────────────────────────────── -->
-    <div id="tab-perfil" class="tab-panel py-6 hidden">
-      <div class="bg-white rounded-xl shadow p-6 max-w-lg">
-        <h2 class="text-lg font-bold text-gray-800 mb-4">Mi Perfil</h2>
-        <button onclick="getPerfil()"
-          class="bg-blue-700 hover:bg-blue-800 text-white rounded-lg px-4 py-2 text-sm font-semibold mb-4 transition">
-          Cargar perfil
-        </button>
-        <div id="perfilCard" class="hidden space-y-2">
-          <div class="grid grid-cols-2 gap-3 text-sm">
-            <div class="bg-slate-50 rounded-lg p-3"><span class="text-gray-500 block text-xs">DNI</span><span id="pDni" class="font-semibold"></span></div>
-            <div class="bg-slate-50 rounded-lg p-3"><span class="text-gray-500 block text-xs">Edad</span><span id="pEdad" class="font-semibold"></span></div>
-            <div class="bg-slate-50 rounded-lg p-3 col-span-2"><span class="text-gray-500 block text-xs">Nombre completo</span><span id="pNombre" class="font-semibold"></span></div>
-            <div class="bg-slate-50 rounded-lg p-3 col-span-2"><span class="text-gray-500 block text-xs">Ingresos mensuales</span><span id="pIngresos" class="font-semibold text-green-700"></span></div>
-            <div class="bg-slate-50 rounded-lg p-3 col-span-2"><span class="text-gray-500 block text-xs">ID de Cliente</span><span id="pId" class="font-mono text-xs text-gray-600 break-all"></span></div>
-          </div>
-        </div>
-        <div id="perfilResp" class="hidden mt-3"></div>
-      </div>
-    </div>
-
-    <!-- ─── TAB: TRANSFERENCIAS ──────────────────────────────────────── -->
-    <div id="tab-ops" class="tab-panel py-6 hidden">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-white rounded-xl shadow p-6">
-          <h2 class="text-lg font-bold text-gray-800 mb-4">Nueva Transferencia</h2>
-          <div class="space-y-3">
-            <div>
-              <label class="text-xs text-gray-500 font-medium">Cuenta Origen</label>
-              <input id="txOrigen" type="text" placeholder="Ej: 001-001234"
-                class="w-full border rounded-lg px-3 py-2 text-sm mt-1 focus:ring-2 focus:ring-blue-400 focus:outline-none" />
-            </div>
-            <div>
-              <label class="text-xs text-gray-500 font-medium">Cuenta Destino</label>
-              <input id="txDestino" type="text" placeholder="Ej: 001-005678"
-                class="w-full border rounded-lg px-3 py-2 text-sm mt-1 focus:ring-2 focus:ring-blue-400 focus:outline-none" />
-            </div>
-            <div>
-              <label class="text-xs text-gray-500 font-medium">Monto (S/)</label>
-              <input id="txMonto" type="number" step="0.01" min="0.01" placeholder="0.00"
-                class="w-full border rounded-lg px-3 py-2 text-sm mt-1 focus:ring-2 focus:ring-blue-400 focus:outline-none" />
-            </div>
-            <button onclick="transferir()"
-              class="w-full bg-blue-700 hover:bg-blue-800 text-white rounded-lg py-2 text-sm font-semibold transition">
-              Realizar Transferencia
+            <button onclick="nav('creditos')" class="rounded-xl border border-gray-100 hover:border-brand/40 hover:bg-brand-soft p-4 text-center group">
+              <div class="text-2xl">📈</div>
+              <p class="text-xs font-semibold text-graphite mt-1.5 group-hover:text-brand">Crédito</p>
             </button>
-          </div>
-          <div id="txResp" class="mt-3 hidden"></div>
-        </div>
-
-        <div class="bg-slate-50 rounded-xl p-5 border border-slate-200">
-          <h3 class="text-sm font-semibold text-gray-700 mb-3">ℹ️ Notas</h3>
-          <ul class="text-xs text-gray-600 space-y-2">
-            <li>• Transferencias ≥ S/ 10,000 se marcan automáticamente como alerta de auditoría.</li>
-            <li>• Solo cuentas en estado <span class="font-mono bg-green-100 text-green-700 px-1 rounded">ACTIVA</span> pueden operar.</li>
-            <li>• Las transferencias son atómicas: si falla cualquier paso, ninguna cuenta es modificada.</li>
-            <li>• El evento de auditoría se emite en tiempo real al stream SSE.</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <!-- ─── TAB: CRÉDITOS ────────────────────────────────────────────── -->
-    <div id="tab-creditos" class="tab-panel py-6 hidden">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="bg-white rounded-xl shadow p-6">
-          <h2 class="text-lg font-bold text-gray-800 mb-4">Evaluar Solicitud de Crédito</h2>
-          <div class="space-y-3">
-            <div>
-              <label class="text-xs text-gray-500 font-medium">ID del Cliente (UUID)</label>
-              <input id="credClienteId" type="text" placeholder="Pega el ID del perfil"
-                class="w-full border rounded-lg px-3 py-2 text-sm mt-1 font-mono focus:ring-2 focus:ring-blue-400 focus:outline-none" />
-            </div>
-            <div>
-              <label class="text-xs text-gray-500 font-medium">Monto Solicitado (S/)</label>
-              <input id="credMonto" type="number" step="0.01" placeholder="0.00"
-                class="w-full border rounded-lg px-3 py-2 text-sm mt-1 focus:ring-2 focus:ring-blue-400 focus:outline-none" />
-            </div>
-            <div>
-              <label class="text-xs text-gray-500 font-medium">Plazo (meses)</label>
-              <input id="credPlazo" type="number" min="1" placeholder="12"
-                class="w-full border rounded-lg px-3 py-2 text-sm mt-1 focus:ring-2 focus:ring-blue-400 focus:outline-none" />
-            </div>
-            <div>
-              <label class="text-xs text-gray-500 font-medium">Tipo de Crédito</label>
-              <select id="credTipo" class="w-full border rounded-lg px-3 py-2 text-sm mt-1 focus:ring-2 focus:ring-blue-400 focus:outline-none">
-                <option value="PERSONAL">PERSONAL</option>
-                <option value="PYME">PYME</option>
-              </select>
-            </div>
-            <button onclick="evaluarCredito()"
-              class="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-lg py-2 text-sm font-semibold transition">
-              Evaluar Solicitud
+            <button onclick="copyCuenta()" class="rounded-xl border border-gray-100 hover:border-brand/40 hover:bg-brand-soft p-4 text-center group">
+              <div class="text-2xl">📋</div>
+              <p class="text-xs font-semibold text-graphite mt-1.5 group-hover:text-brand">Copiar N°</p>
             </button>
-          </div>
-          <div id="credResp" class="mt-3 hidden"></div>
-        </div>
-
-        <div class="bg-slate-50 rounded-xl p-5 border border-slate-200">
-          <h3 class="text-sm font-semibold text-gray-700 mb-3">📋 Criterios de evaluación</h3>
-          <div class="space-y-3 text-xs text-gray-600">
-            <div class="bg-white rounded p-3 border border-gray-200">
-              <p class="font-semibold text-gray-700 mb-1">PERSONAL</p>
-              <p>• Ingreso mínimo: S/ 1,200</p>
-              <p>• Monto máximo: 8× ingresos mensuales</p>
-            </div>
-            <div class="bg-white rounded p-3 border border-gray-200">
-              <p class="font-semibold text-gray-700 mb-1">PYME</p>
-              <p>• Ingreso mínimo: S/ 2,500</p>
-              <p>• Monto máximo: 15× ingresos mensuales</p>
-              <p>• Plazo máximo sin observación: 36 meses</p>
-            </div>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- ─── TAB: AUDITORÍA SSE ───────────────────────────────────────── -->
-    <div id="tab-auditoria" class="tab-panel py-6 hidden">
-      <div class="bg-white rounded-xl shadow p-6">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="text-lg font-bold text-gray-800">Monitor de Auditoría en Tiempo Real</h2>
-          <div class="flex gap-2">
-            <button onclick="startSSE()"
-              class="bg-green-600 hover:bg-green-700 text-white text-xs px-3 py-1.5 rounded-lg transition">
-              ▶ Conectar SSE
+      <!-- Banner de perfil / celular -->
+      <div id="celularBanner"></div>
+
+      <!-- Datos del perfil -->
+      <div class="rounded-xl2 bg-white shadow-card p-6">
+        <div class="flex items-center justify-between mb-5">
+          <p class="font-bold text-ink">Mi información</p>
+          <span class="text-xs text-graphite/50">Perfil de cliente</span>
+        </div>
+        <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-canvas rounded-xl p-4">
+            <p class="text-xs text-graphite/50">Titular</p>
+            <p id="pfNombre" class="font-semibold text-ink mt-1 text-sm">—</p>
+          </div>
+          <div class="bg-canvas rounded-xl p-4">
+            <p class="text-xs text-graphite/50">DNI</p>
+            <p id="pfDni" class="font-semibold text-ink mt-1 text-sm">—</p>
+          </div>
+          <div class="bg-canvas rounded-xl p-4">
+            <p class="text-xs text-graphite/50">Celular</p>
+            <p id="pfCelular" class="font-semibold text-ink mt-1 text-sm">—</p>
+          </div>
+          <div class="bg-canvas rounded-xl p-4">
+            <p class="text-xs text-graphite/50">Ingresos mensuales</p>
+            <p id="pfIngresos" class="font-semibold text-ink mt-1 text-sm">—</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── SECCIÓN: TRANSFERENCIAS ─────────────────────────────── -->
+    <section id="sec-transfer" class="app-sec hidden-soft">
+      <div class="grid lg:grid-cols-5 gap-6">
+
+        <!-- Formulario -->
+        <div class="lg:col-span-3 rounded-xl2 bg-white shadow-card p-6 sm:p-7">
+          <h2 class="text-xl font-extrabold text-ink">Nueva transferencia</h2>
+          <p class="text-graphite/60 text-sm mt-1">Envía dinero al instante por cuenta o celular.</p>
+
+          <!-- Saldo disponible mini -->
+          <div class="mt-5 flex items-center justify-between bg-canvas rounded-xl px-4 py-3">
+            <span class="text-xs text-graphite/60">Saldo disponible</span>
+            <span id="txSaldo" class="font-bold text-ink">—</span>
+          </div>
+
+          <!-- Selector de modo -->
+          <div class="flex p-1 bg-canvas rounded-xl mt-5">
+            <button onclick="setTransferMode('cuenta')" id="tmCuenta"
+              class="flex-1 py-2.5 text-sm font-semibold rounded-lg bg-white shadow-card text-brand">N° de cuenta</button>
+            <button onclick="setTransferMode('celular')" id="tmCelular"
+              class="flex-1 py-2.5 text-sm font-semibold rounded-lg text-graphite">Celular</button>
+          </div>
+
+          <div class="space-y-4 mt-5">
+            <!-- Cuenta origen (auto, solo lectura) -->
+            <div>
+              <label class="text-xs font-semibold text-graphite">Desde tu cuenta</label>
+              <input id="txOrigen" readonly class="field mt-1.5 bg-canvas font-mono tracking-widest cursor-not-allowed" />
+            </div>
+
+            <!-- Destino por cuenta -->
+            <div id="destCuenta">
+              <label class="text-xs font-semibold text-graphite">Cuenta destino (6 dígitos)</label>
+              <input id="txCuentaDestino" type="text" inputmode="numeric" maxlength="6" placeholder="4XXXXX"
+                     class="field mt-1.5 font-mono tracking-widest" oninput="onDestinoInput()" />
+              <p id="errCuentaDest" class="hidden-soft text-brand text-xs font-medium mt-1.5"></p>
+            </div>
+
+            <!-- Destino por celular -->
+            <div id="destCelular" class="hidden-soft">
+              <label class="text-xs font-semibold text-graphite">Celular destino (9 dígitos)</label>
+              <input id="txCelularDestino" type="text" inputmode="numeric" maxlength="9" placeholder="9XXXXXXXX"
+                     class="field mt-1.5 font-mono tracking-wider" oninput="onDestinoInput()" />
+              <p id="errCelularDest" class="hidden-soft text-brand text-xs font-medium mt-1.5"></p>
+            </div>
+
+            <!-- Monto -->
+            <div>
+              <label class="text-xs font-semibold text-graphite">Monto a enviar (S/)</label>
+              <div class="relative mt-1.5">
+                <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-graphite/50 font-semibold">S/</span>
+                <input id="txMonto" type="number" step="0.01" min="0.01" placeholder="0.00"
+                       class="field pl-10 text-lg font-semibold" oninput="onMontoInput()" />
+              </div>
+              <div class="flex items-center justify-between mt-1.5">
+                <p id="errMonto" class="hidden-soft text-brand text-xs font-medium">El monto supera tu saldo disponible</p>
+                <div class="flex gap-1.5 ml-auto">
+                  <button type="button" onclick="setMontoPct(.25)" class="text-[11px] px-2 py-0.5 rounded-md bg-canvas hover:bg-gray-200 text-graphite">25%</button>
+                  <button type="button" onclick="setMontoPct(.5)"  class="text-[11px] px-2 py-0.5 rounded-md bg-canvas hover:bg-gray-200 text-graphite">50%</button>
+                  <button type="button" onclick="setMontoPct(1)"   class="text-[11px] px-2 py-0.5 rounded-md bg-canvas hover:bg-gray-200 text-graphite">Todo</button>
+                </div>
+              </div>
+            </div>
+
+            <button id="txBtn" onclick="transferir()" disabled class="btn-brand w-full flex items-center justify-center gap-2">
+              <span id="txBtnText">Enviar dinero</span>
+              <span id="txSpin" class="hidden-soft w-4 h-4 border-2 border-white/40 border-t-white rounded-full spin"></span>
             </button>
-            <button onclick="stopSSE()"
-              class="bg-red-500 hover:bg-red-600 text-white text-xs px-3 py-1.5 rounded-lg transition">
-              ■ Desconectar
+          </div>
+        </div>
+
+        <!-- Resumen + notas -->
+        <div class="lg:col-span-2 space-y-6">
+          <div class="rounded-xl2 bg-white shadow-card p-6">
+            <p class="font-bold text-ink mb-4">Resumen</p>
+            <div class="space-y-3 text-sm">
+              <div class="flex justify-between"><span class="text-graphite/60">Origen</span><span id="rsOrigen" class="font-mono font-semibold text-ink">—</span></div>
+              <div class="flex justify-between"><span class="text-graphite/60">Destino</span><span id="rsDestino" class="font-mono font-semibold text-ink">—</span></div>
+              <div class="flex justify-between"><span class="text-graphite/60">Monto</span><span id="rsMonto" class="font-semibold text-ink">S/ 0.00</span></div>
+              <div class="border-t border-gray-100 pt-3 flex justify-between">
+                <span class="text-graphite/60">Saldo tras envío</span><span id="rsResto" class="font-bold text-brand">—</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="rounded-xl2 bg-brand-soft border border-brand/15 p-5">
+            <p class="text-sm font-bold text-brand-dark mb-2">ℹ️ Buenas a saber</p>
+            <ul class="text-xs text-graphite/80 space-y-1.5 leading-relaxed">
+              <li>• Transferencias ≥ S/ 10,000 generan una alerta de auditoría.</li>
+              <li>• Solo cuentas <b>ACTIVAS</b> pueden enviar y recibir.</li>
+              <li>• La operación es atómica: o se completa todo, o nada cambia.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── SECCIÓN: CRÉDITOS ───────────────────────────────────── -->
+    <section id="sec-creditos" class="app-sec hidden-soft">
+      <div class="grid lg:grid-cols-5 gap-6">
+        <div class="lg:col-span-3 rounded-xl2 bg-white shadow-card p-6 sm:p-7">
+          <h2 class="text-xl font-extrabold text-ink">Evaluar un crédito</h2>
+          <p class="text-graphite/60 text-sm mt-1">Descubre cuánto podrías obtener al instante.</p>
+
+          <div class="space-y-4 mt-5">
+            <div>
+              <label class="text-xs font-semibold text-graphite">Tipo de crédito</label>
+              <div class="flex p-1 bg-canvas rounded-xl mt-1.5">
+                <button onclick="setCredTipo('PERSONAL')" id="ctPersonal" class="flex-1 py-2.5 text-sm font-semibold rounded-lg bg-white shadow-card text-brand">Personal</button>
+                <button onclick="setCredTipo('PYME')" id="ctPyme" class="flex-1 py-2.5 text-sm font-semibold rounded-lg text-graphite">PYME</button>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-xs font-semibold text-graphite">Monto solicitado (S/)</label>
+                <input id="credMonto" type="number" step="0.01" min="0" placeholder="5000.00" class="field mt-1.5" />
+              </div>
+              <div>
+                <label class="text-xs font-semibold text-graphite">Plazo (meses)</label>
+                <input id="credPlazo" type="number" min="1" placeholder="12" class="field mt-1.5" />
+              </div>
+            </div>
+            <button onclick="evaluarCredito()" id="credBtn" class="btn-brand w-full flex items-center justify-center gap-2">
+              <span id="credBtnText">Evaluar solicitud</span>
+              <span id="credSpin" class="hidden-soft w-4 h-4 border-2 border-white/40 border-t-white rounded-full spin"></span>
             </button>
-            <button onclick="document.getElementById('sseLog').innerHTML=''"
-              class="bg-gray-400 hover:bg-gray-500 text-white text-xs px-3 py-1.5 rounded-lg transition">
-              Limpiar
-            </button>
+          </div>
+
+          <!-- Resultado -->
+          <div id="credResult" class="hidden-soft mt-5"></div>
+        </div>
+
+        <div class="lg:col-span-2 space-y-4">
+          <div class="rounded-xl2 bg-white shadow-card p-5">
+            <p class="font-bold text-ink text-sm mb-2">💼 Personal</p>
+            <ul class="text-xs text-graphite/70 space-y-1">
+              <li>• Ingreso mínimo: S/ 1,200</li>
+              <li>• Monto máximo: 8× ingresos mensuales</li>
+            </ul>
+          </div>
+          <div class="rounded-xl2 bg-white shadow-card p-5">
+            <p class="font-bold text-ink text-sm mb-2">🏪 PYME</p>
+            <ul class="text-xs text-graphite/70 space-y-1">
+              <li>• Ingreso mínimo: S/ 2,500</li>
+              <li>• Monto máximo: 15× ingresos mensuales</li>
+              <li>• Plazo máximo sin observación: 36 meses</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ─── SECCIÓN: MONITOR (SSE) ──────────────────────────────── -->
+    <section id="sec-monitor" class="app-sec hidden-soft">
+      <div class="rounded-xl2 bg-white shadow-card p-6 sm:p-7">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+          <div>
+            <h2 class="text-xl font-extrabold text-ink">Monitor de auditoría</h2>
+            <p class="text-graphite/60 text-sm mt-1">Eventos de transferencia en tiempo real (rol AUDITOR).</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="startSSE()" class="btn-brand !py-2 !px-3 text-xs">▶ Conectar</button>
+            <button onclick="stopSSE()" class="btn-ghost !py-2 !px-3 text-xs">■ Detener</button>
+            <button onclick="document.getElementById('sseLog').innerHTML=''" class="btn-ghost !py-2 !px-3 text-xs">Limpiar</button>
           </div>
         </div>
         <div class="flex items-center gap-2 mb-3">
-          <div id="sseDot" class="w-2.5 h-2.5 rounded-full bg-gray-400"></div>
-          <span id="sseStatus" class="text-xs text-gray-500">Desconectado</span>
-          <span class="text-xs text-gray-400 ml-2">⚠️ Requiere rol AUDITOR</span>
+          <span id="sseDot" class="w-2.5 h-2.5 rounded-full bg-gray-300"></span>
+          <span id="sseStatus" class="text-xs text-graphite/60">Desconectado</span>
         </div>
-        <div id="sseLog"
-          class="bg-slate-900 text-green-400 font-mono text-xs rounded-lg p-4 h-80 overflow-y-auto space-y-1">
-          <p class="text-slate-500">// Los eventos de transferencia aparecerán aquí en tiempo real...</p>
+        <div id="sseLog" class="bg-[#0d1117] text-emerald-400 font-mono text-xs rounded-xl p-4 h-80 overflow-y-auto space-y-1">
+          <p class="text-slate-500">// Los eventos aparecerán aquí en tiempo real…</p>
         </div>
       </div>
+    </section>
+
+  </main>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     MODAL · Asociar / actualizar celular
+════════════════════════════════════════════════════════════════════════ -->
+<div id="celularModal" class="hidden-soft fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm fade-in" onclick="closeCelularModal()"></div>
+  <div class="relative bg-white rounded-xl2 shadow-lift w-full max-w-sm p-6 pop">
+    <div class="w-12 h-12 rounded-xl bg-brand-soft text-brand text-2xl flex items-center justify-center mb-4">📱</div>
+    <h3 class="text-lg font-extrabold text-ink">Tu número de celular</h3>
+    <p class="text-graphite/60 text-sm mt-1">Asócialo para recibir transferencias sin compartir tu número de cuenta.</p>
+
+    <label class="text-xs font-semibold text-graphite block mt-5">Celular (9 dígitos)</label>
+    <input id="modalCelular" type="text" inputmode="numeric" maxlength="9" placeholder="9XXXXXXXX"
+           class="field mt-1.5 font-mono tracking-wider" />
+    <p id="modalCelError" class="hidden-soft text-brand text-xs font-medium mt-1.5"></p>
+
+    <div class="flex gap-3 mt-6">
+      <button onclick="closeCelularModal()" class="btn-ghost flex-1">Cancelar</button>
+      <button onclick="saveCelular()" id="modalCelBtn" class="btn-brand flex-1 flex items-center justify-center gap-2">
+        <span id="modalCelText">Guardar</span>
+        <span id="modalCelSpin" class="hidden-soft w-4 h-4 border-2 border-white/40 border-t-white rounded-full spin"></span>
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════════════════════════
+     MODAL · Cuenta creada (animación de revelado)
+════════════════════════════════════════════════════════════════════════ -->
+<div id="welcomeModal" class="hidden-soft fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm fade-in"></div>
+  <div class="relative bg-white rounded-xl2 shadow-lift w-full max-w-sm p-7 text-center pop">
+    <div id="wmIcon" class="mx-auto w-16 h-16 rounded-full bg-brand-soft flex items-center justify-center text-3xl mb-4">⚙️</div>
+    <h3 id="wmTitle" class="text-lg font-extrabold text-ink">Creando tu cuenta…</h3>
+    <p id="wmSub" class="text-graphite/60 text-sm mt-1">Generando tu número bancario único</p>
+
+    <div class="my-7">
+      <p class="text-xs text-graphite/50 mb-2">Tu número de cuenta</p>
+      <p id="wmNumero" class="font-mono text-3xl font-extrabold tracking-[0.3em] text-brand">4·····</p>
     </div>
 
-  </div><!-- /max-w-5xl -->
+    <div id="wmSaldoRow" class="hidden-soft bg-canvas rounded-xl py-3 mb-5">
+      <p class="text-xs text-graphite/50">Saldo inicial</p>
+      <p class="text-xl font-extrabold text-ink">S/ 0.00</p>
+    </div>
 
-  <!-- ═══ TOAST ════════════════════════════════════════════════════════ -->
-  <div id="toast" class="fixed bottom-6 right-6 hidden z-50">
-    <div id="toastInner" class="px-4 py-3 rounded-xl shadow-xl text-white text-sm font-medium max-w-xs"></div>
+    <button id="wmBtn" onclick="enterFromWelcome()" disabled class="btn-brand w-full">Ir a mi banca</button>
   </div>
+</div>
 
-  <!-- ═══ SCRIPT ═══════════════════════════════════════════════════════ -->
-  <script>
-    // ── Estado global ────────────────────────────────────────────────
-    let token = localStorage.getItem('ch_token') || null;
-    let sseReader = null;
 
-    const api = () => document.getElementById('apiBase').value.replace(/\/$/, '');
+<!-- ════════════════════════════════════════════════════════════════════════
+     TOAST
+════════════════════════════════════════════════════════════════════════ -->
+<div id="toast" class="hidden-soft fixed bottom-6 right-6 z-[60]">
+  <div id="toastInner" class="flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lift text-white text-sm font-medium max-w-xs"></div>
+</div>
 
-    // ── UI helpers ───────────────────────────────────────────────────
-    function showTab(name) {
-      document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
-      document.querySelectorAll('.tab-btn').forEach(b => {
-        b.classList.remove('active', 'border-blue-600', 'text-blue-600');
-        b.classList.add('text-gray-500', 'border-transparent');
-      });
-      document.getElementById('tab-' + name).classList.remove('hidden');
-      const btn = document.getElementById('btn-' + name);
-      btn.classList.add('border-blue-600', 'text-blue-600');
-      btn.classList.remove('text-gray-500', 'border-transparent');
+<style>
+  .nav-tab {
+    padding:.85rem 1rem; font-size:.85rem; font-weight:600; color:#718096;
+    border-bottom:2.5px solid transparent; white-space:nowrap;
+  }
+  .nav-tab:hover { color:#D6001C; }
+  .nav-tab.active { color:#D6001C; border-color:#D6001C; }
+</style>
+
+<script>
+// ════════════════════════════════════════════════════════════════════════
+//  ESTADO GLOBAL
+// ════════════════════════════════════════════════════════════════════════
+let token   = localStorage.getItem('ch_token') || null;
+let cliente = null;   // perfil { id, dni, nombres, apellidos, ingresosMensuales, edad, celular }
+let cuenta  = null;   // cuenta principal { id, numeroCuenta, saldo, estado, ... }
+let transferMode = 'cuenta';
+let credTipo = 'PERSONAL';
+let sseReader = null;
+
+const DEFAULT_API = 'https://caja-huancayo-backend-production.up.railway.app';
+
+// ── Helpers base ────────────────────────────────────────────────────────
+const $ = (id) => document.getElementById(id);
+const api = () => ($('apiBase').value || DEFAULT_API).replace(/\/$/, '');
+const money = (n) => 'S/ ' + Number(n || 0).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const show = (el) => el.classList.remove('hidden-soft');
+const hide = (el) => el.classList.add('hidden-soft');
+
+// Inicializa la URL del backend guardada (o la de producción por defecto)
+$('apiBase').value = localStorage.getItem('ch_api') || DEFAULT_API;
+$('apiBase').addEventListener('change', () => localStorage.setItem('ch_api', $('apiBase').value));
+
+// ── Toast ───────────────────────────────────────────────────────────────
+function toast(msg, type = 'ok') {
+  const t = $('toast'), i = $('toastInner');
+  const styles = {
+    ok:   { bg:'#16A34A', icon:'✓' },
+    err:  { bg:'#D6001C', icon:'✕' },
+    info: { bg:'#2D3748', icon:'ℹ' },
+  }[type] || { bg:'#2D3748', icon:'ℹ' };
+  i.style.background = styles.bg;
+  i.innerHTML = `<span class="font-bold">${styles.icon}</span><span>${msg}</span>`;
+  show(t); t.classList.add('fade-up');
+  clearTimeout(window.__toastT);
+  window.__toastT = setTimeout(() => hide(t), 3600);
+}
+
+function togglePass(id, btn) {
+  const el = $(id);
+  el.type = el.type === 'password' ? 'text' : 'password';
+  btn.style.opacity = el.type === 'text' ? '1' : '.5';
+}
+
+// ── Fetch helper con manejo de errores del backend ──────────────────────
+async function apiFetch(path, method = 'GET', body = null) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const opts = { method, headers };
+  if (body) opts.body = JSON.stringify(body);
+  try {
+    const res = await fetch(api() + path, opts);
+    const text = await res.text();
+    let data; try { data = JSON.parse(text); } catch { data = text; }
+    return { ok: res.ok, status: res.status, data };
+  } catch (e) {
+    return { ok: false, status: 0, data: { message: 'No se pudo conectar con el servidor. Verifica tu conexión.' } };
+  }
+}
+// Extrae el mensaje de error del formato del GlobalExceptionHandler
+const errMsg = (r, fallback) => (r.data && r.data.message) ? r.data.message : (typeof r.data === 'string' && r.data ? r.data : fallback);
+
+
+// ════════════════════════════════════════════════════════════════════════
+//  AUTENTICACIÓN
+// ════════════════════════════════════════════════════════════════════════
+function setAuthMode(mode) {
+  const isLogin = mode === 'login';
+  $('formLogin').classList.toggle('hidden-soft', !isLogin);
+  $('formReg').classList.toggle('hidden-soft', isLogin);
+  // Estilos de pestañas
+  $('swLogin').className = `flex-1 py-2.5 text-sm font-semibold rounded-lg ${isLogin ? 'bg-white shadow-card text-brand' : 'text-graphite'}`;
+  $('swReg').className   = `flex-1 py-2.5 text-sm font-semibold rounded-lg ${!isLogin ? 'bg-white shadow-card text-brand' : 'text-graphite'}`;
+  hide($('loginError')); hide($('regError'));
+}
+
+function fieldError(inputId, errorId, msg) {
+  $(inputId).classList.add('error', 'shake');
+  setTimeout(() => $(inputId).classList.remove('shake'), 400);
+  if (errorId) { $(errorId).textContent = msg; show($(errorId)); }
+}
+
+async function login() {
+  const email = $('loginEmail').value.trim();
+  const pass  = $('loginPass').value;
+  hide($('loginError'));
+  $('loginEmail').classList.remove('error'); $('loginPass').classList.remove('error');
+
+  if (!email || !pass) {
+    if (!email) $('loginEmail').classList.add('error');
+    if (!pass)  $('loginPass').classList.add('error');
+    fieldError('loginPass', 'loginError', 'Completa tu correo y contraseña.');
+    return;
+  }
+
+  setBtnLoading('login', true);
+  const r = await apiFetch('/api/auth/login', 'POST', { email, password: pass });
+  setBtnLoading('login', false);
+
+  if (r.ok && r.data.token) {
+    token = r.data.token;
+    localStorage.setItem('ch_token', token);
+    localStorage.setItem('ch_email', email);
+    toast('¡Bienvenido de nuevo!');
+    await enterApp();
+  } else {
+    fieldError('loginPass', 'loginError', errMsg(r, 'Credenciales inválidas. Inténtalo de nuevo.'));
+    $('loginEmail').classList.add('error');
+  }
+}
+
+async function registro() {
+  const body = {
+    email:             $('regEmail').value.trim(),
+    password:          $('regPass').value,
+    dni:               $('regDni').value.trim(),
+    nombres:           $('regNombres').value.trim(),
+    apellidos:         $('regApellidos').value.trim(),
+    ingresosMensuales: parseFloat($('regIngresos').value) || 0,
+    edad:              parseInt($('regEdad').value) || 0,
+  };
+  hide($('regError'));
+  ['regEmail','regPass','regDni','regNombres','regApellidos','regEdad'].forEach(id => $(id).classList.remove('error'));
+
+  // Validación cliente
+  if (!body.nombres)   return fieldError('regNombres','regError','Ingresa tus nombres.');
+  if (!body.apellidos) return fieldError('regApellidos','regError','Ingresa tus apellidos.');
+  if (!/^\d{8}$/.test(body.dni)) return fieldError('regDni','regError','El DNI debe tener 8 dígitos.');
+  if (!body.edad || body.edad < 18) return fieldError('regEdad','regError','Debes ser mayor de edad (18+).');
+  if (!/^\S+@\S+\.\S+$/.test(body.email)) return fieldError('regEmail','regError','Ingresa un correo válido.');
+  if (body.password.length < 6) return fieldError('regPass','regError','La contraseña debe tener al menos 6 caracteres.');
+
+  setBtnLoading('reg', true);
+  const r = await apiFetch('/api/auth/registro', 'POST', body);
+
+  if (r.ok && r.data.token) {
+    token = r.data.token;
+    localStorage.setItem('ch_token', token);
+    localStorage.setItem('ch_email', body.email);
+    // Animación de creación de cuenta mientras obtenemos el número real
+    setBtnLoading('reg', false);
+    await runWelcomeAnimation();
+  } else {
+    setBtnLoading('reg', false);
+    fieldError('regEmail','regError', errMsg(r, 'No se pudo crear la cuenta.'));
+  }
+}
+
+function setBtnLoading(prefix, loading) {
+  $(prefix + 'Btn').disabled = loading;
+  $(prefix + 'BtnText') && ($(prefix + 'BtnText').style.opacity = loading ? '.6' : '1');
+  loading ? show($(prefix + 'Spin')) : hide($(prefix + 'Spin'));
+}
+
+// ── Animación de bienvenida: revela el número de cuenta generado ────────
+async function runWelcomeAnimation() {
+  const modal = $('welcomeModal');
+  show(modal);
+  $('wmIcon').textContent = '⚙️';
+  $('wmIcon').classList.add('spin');
+  $('wmTitle').textContent = 'Creando tu cuenta…';
+  $('wmSub').textContent = 'Generando tu número bancario único';
+  $('wmBtn').disabled = true;
+  hide($('wmSaldoRow'));
+
+  // Efecto "tragamonedas" mientras se obtienen los datos reales
+  const numEl = $('wmNumero');
+  const shuffle = setInterval(() => {
+    numEl.textContent = '4' + String(Math.floor(Math.random() * 100000)).padStart(5, '0');
+  }, 70);
+
+  // Obtenemos el perfil y la cuenta real generada por el backend
+  await loadProfileAndAccount();
+
+  // Esperamos un mínimo para que la animación se aprecie
+  await new Promise(res => setTimeout(res, 1400));
+  clearInterval(shuffle);
+
+  // Revelamos el número real
+  const realNum = cuenta ? cuenta.numeroCuenta : '4' + String(Math.floor(Math.random()*100000)).padStart(5,'0');
+  numEl.textContent = realNum;
+  numEl.classList.add('pop');
+  $('wmIcon').classList.remove('spin');
+  $('wmIcon').textContent = '✅';
+  $('wmTitle').textContent = '¡Cuenta creada!';
+  $('wmSub').textContent = 'Tu cuenta de ahorros está lista para usarse';
+  show($('wmSaldoRow'));
+  $('wmBtn').disabled = false;
+}
+
+async function enterFromWelcome() {
+  hide($('welcomeModal'));
+  await enterApp(true); // ya tenemos perfil/cuenta cargados
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  CARGA DE DATOS (perfil + cuenta = saldo)
+// ════════════════════════════════════════════════════════════════════════
+async function loadProfileAndAccount() {
+  const rp = await apiFetch('/api/perfil');
+  if (!rp.ok) return false;
+  cliente = rp.data;
+
+  // El saldo vive en las cuentas del cliente → las pedimos por su clienteId
+  const rc = await apiFetch('/api/operaciones/cuentas/' + cliente.id);
+  if (rc.ok && Array.isArray(rc.data) && rc.data.length) {
+    // Tomamos la cuenta principal (la que empieza con 4, o la primera)
+    cuenta = rc.data.find(c => String(c.numeroCuenta).startsWith('4')) || rc.data[0];
+  }
+  return true;
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  ENTRAR A LA APP
+// ════════════════════════════════════════════════════════════════════════
+async function enterApp(alreadyLoaded = false) {
+  hide($('authView'));
+  show($('appView'));
+  if (!alreadyLoaded) {
+    // Mostramos el skeleton mientras carga
+    show($('balanceSkel')); hide($('balanceAmount'));
+    await loadProfileAndAccount();
+  }
+  renderHeader();
+  renderDashboard();
+  nav('dashboard');
+}
+
+function renderHeader() {
+  if (!cliente) return;
+  const nombre = `${cliente.nombres || ''} ${cliente.apellidos || ''}`.trim();
+  $('hdrName').textContent = nombre || (localStorage.getItem('ch_email') || '');
+  $('hdrEmail').textContent = localStorage.getItem('ch_email') || '';
+  $('hdrAvatar').textContent = (cliente.nombres || 'U').charAt(0).toUpperCase();
+}
+
+async function loadDashboard(refresh = false) {
+  if (refresh) {
+    show($('balanceSkel')); hide($('balanceAmount'));
+    await loadProfileAndAccount();
+    toast('Saldo actualizado', 'info');
+  }
+  renderDashboard();
+}
+
+function renderDashboard() {
+  // Saldo
+  hide($('balanceSkel')); show($('balanceAmount'));
+  $('balanceAmount').textContent = cuenta ? money(cuenta.saldo) : 'S/ 0.00';
+  $('cardNumero').textContent = cuenta ? cuenta.numeroCuenta : '——————';
+  if (cuenta) {
+    $('cardEstado').textContent = cuenta.estado;
+  }
+
+  // Perfil
+  if (cliente) {
+    $('pfNombre').textContent   = `${cliente.nombres || ''} ${cliente.apellidos || ''}`.trim() || '—';
+    $('pfDni').textContent      = cliente.dni || '—';
+    $('pfCelular').textContent  = cliente.celular || 'No registrado';
+    $('pfIngresos').textContent = money(cliente.ingresosMensuales);
+  }
+
+  renderCelularBanner();
+  // Pre-llenar transferencia
+  if (cuenta) {
+    $('txOrigen').value = cuenta.numeroCuenta;
+    $('rsOrigen').textContent = cuenta.numeroCuenta;
+    $('txSaldo').textContent = money(cuenta.saldo);
+  }
+}
+
+// Banner dinámico: si no hay celular → CTA roja; si hay → confirmación discreta
+function renderCelularBanner() {
+  const wrap = $('celularBanner');
+  if (cliente && cliente.celular) {
+    wrap.innerHTML = `
+      <div class="rounded-xl2 bg-white shadow-card p-5 flex items-center justify-between flex-wrap gap-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">📱</div>
+          <div>
+            <p class="font-semibold text-ink text-sm">Celular asociado</p>
+            <p class="text-graphite/60 text-xs">Puedes recibir transferencias al ${cliente.celular}</p>
+          </div>
+        </div>
+        <button onclick="openCelularModal()" class="btn-ghost !py-2 !px-3 text-xs">Cambiar</button>
+      </div>`;
+  } else {
+    wrap.innerHTML = `
+      <div class="rounded-xl2 p-5 flex items-center justify-between flex-wrap gap-3 border border-brand/20"
+           style="background:linear-gradient(100deg,#FDECEE,#fff)">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-brand text-white flex items-center justify-center text-lg">📱</div>
+          <div>
+            <p class="font-semibold text-ink text-sm">Completa tu perfil</p>
+            <p class="text-graphite/60 text-xs">Asocia tu celular y recibe dinero sin compartir tu N° de cuenta.</p>
+          </div>
+        </div>
+        <button onclick="openCelularModal()" class="btn-brand !py-2 !px-4 text-xs">Asociar celular</button>
+      </div>`;
+  }
+}
+
+function copyCuenta() {
+  if (!cuenta) return;
+  navigator.clipboard.writeText(cuenta.numeroCuenta).then(
+    () => toast('Número de cuenta copiado', 'info'),
+    () => toast('No se pudo copiar', 'err')
+  );
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  NAVEGACIÓN
+// ════════════════════════════════════════════════════════════════════════
+function nav(name) {
+  document.querySelectorAll('.app-sec').forEach(s => hide(s));
+  show($('sec-' + name));
+  document.querySelectorAll('[data-nav]').forEach(b =>
+    b.classList.toggle('active', b.dataset.nav === name));
+  document.querySelector(`[data-nav="${name}"]`).scrollIntoView({ block:'nearest', inline:'center' });
+}
+
+function logout() {
+  stopSSE();
+  localStorage.removeItem('ch_token');
+  localStorage.removeItem('ch_email');
+  token = null; cliente = null; cuenta = null;
+  hide($('appView')); show($('authView'));
+  setAuthMode('login');
+  toast('Sesión cerrada', 'info');
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  CELULAR (modal + PATCH /api/perfil/celular)
+// ════════════════════════════════════════════════════════════════════════
+function openCelularModal() {
+  $('modalCelular').value = (cliente && cliente.celular) || '';
+  hide($('modalCelError'));
+  $('modalCelular').classList.remove('error');
+  show($('celularModal'));
+}
+function closeCelularModal() { hide($('celularModal')); }
+
+async function saveCelular() {
+  const cel = $('modalCelular').value.trim();
+  hide($('modalCelError'));
+  $('modalCelular').classList.remove('error');
+
+  if (!/^\d{9}$/.test(cel)) {
+    $('modalCelular').classList.add('error', 'shake');
+    setTimeout(() => $('modalCelular').classList.remove('shake'), 400);
+    $('modalCelError').textContent = 'El celular debe tener 9 dígitos.';
+    show($('modalCelError'));
+    return;
+  }
+
+  $('modalCelBtn').disabled = true; show($('modalCelSpin'));
+  const r = await apiFetch('/api/perfil/celular', 'PATCH', { celular: cel });
+  $('modalCelBtn').disabled = false; hide($('modalCelSpin'));
+
+  if (r.ok) {
+    cliente = r.data;          // el endpoint devuelve el perfil actualizado
+    closeCelularModal();
+    renderDashboard();
+    toast('Celular actualizado correctamente');
+  } else {
+    $('modalCelError').textContent = errMsg(r, 'No se pudo guardar el celular.');
+    show($('modalCelError'));
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  TRANSFERENCIAS (con validación en tiempo real)
+// ════════════════════════════════════════════════════════════════════════
+function setTransferMode(mode) {
+  transferMode = mode;
+  const byCuenta = mode === 'cuenta';
+  $('destCuenta').classList.toggle('hidden-soft', !byCuenta);
+  $('destCelular').classList.toggle('hidden-soft', byCuenta);
+  $('tmCuenta').className  = `flex-1 py-2.5 text-sm font-semibold rounded-lg ${byCuenta ? 'bg-white shadow-card text-brand' : 'text-graphite'}`;
+  $('tmCelular').className = `flex-1 py-2.5 text-sm font-semibold rounded-lg ${!byCuenta ? 'bg-white shadow-card text-brand' : 'text-graphite'}`;
+  validateTransfer();
+}
+
+function onDestinoInput() {
+  // Solo dígitos
+  if (transferMode === 'cuenta') $('txCuentaDestino').value = $('txCuentaDestino').value.replace(/\D/g, '');
+  else $('txCelularDestino').value = $('txCelularDestino').value.replace(/\D/g, '');
+  validateTransfer();
+}
+
+function onMontoInput() { validateTransfer(); }
+
+function setMontoPct(pct) {
+  if (!cuenta) return;
+  const val = (Number(cuenta.saldo) * pct);
+  $('txMonto').value = val.toFixed(2);
+  validateTransfer();
+}
+
+// Núcleo de validación en tiempo real → habilita/inhabilita el botón Enviar
+function validateTransfer() {
+  const saldo = cuenta ? Number(cuenta.saldo) : 0;
+  const monto = parseFloat($('txMonto').value) || 0;
+  let ok = true;
+
+  // Validación de destino
+  if (transferMode === 'cuenta') {
+    const dest = $('txCuentaDestino').value;
+    if (dest.length > 0 && dest.length !== 6) {
+      ok = false; show($('errCuentaDest')); $('errCuentaDest').textContent = 'La cuenta debe tener 6 dígitos.';
+    } else if (dest === (cuenta && cuenta.numeroCuenta)) {
+      ok = false; show($('errCuentaDest')); $('errCuentaDest').textContent = 'No puedes transferirte a tu misma cuenta.';
+    } else {
+      hide($('errCuentaDest'));
     }
-
-    function showToast(msg, ok = true) {
-      const t = document.getElementById('toast');
-      const i = document.getElementById('toastInner');
-      i.className = `px-4 py-3 rounded-xl shadow-xl text-white text-sm font-medium ${ok ? 'bg-green-600' : 'bg-red-600'}`;
-      i.textContent = msg;
-      t.classList.remove('hidden');
-      setTimeout(() => t.classList.add('hidden'), 3500);
+    if (dest.length !== 6) ok = false;
+  } else {
+    const cel = $('txCelularDestino').value;
+    if (cel.length > 0 && cel.length !== 9) {
+      ok = false; show($('errCelularDest')); $('errCelularDest').textContent = 'El celular debe tener 9 dígitos.';
+    } else if (cliente && cel === cliente.celular) {
+      ok = false; show($('errCelularDest')); $('errCelularDest').textContent = 'Ese es tu propio celular.';
+    } else {
+      hide($('errCelularDest'));
     }
+    if (cel.length !== 9) ok = false;
+  }
 
-    function responseBox(elId, data, ok = true) {
-      const el = document.getElementById(elId);
-      el.classList.remove('hidden');
-      el.className = `mt-3 p-3 rounded-lg text-xs font-mono whitespace-pre-wrap break-all ${ok ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'}`;
-      el.textContent = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
-    }
+  // Validación de monto vs saldo (requisito estrella)
+  $('txMonto').classList.remove('error');
+  hide($('errMonto'));
+  if (monto > 0 && monto > saldo) {
+    ok = false;
+    $('txMonto').classList.add('error');
+    $('errMonto').textContent = `El monto supera tu saldo disponible (${money(saldo)}).`;
+    show($('errMonto'));
+  }
+  if (monto <= 0) ok = false;
 
-    function setLoggedIn(email) {
-      token = localStorage.getItem('ch_token');
-      const h = document.getElementById('headerUser');
-      h.classList.remove('hidden');
-      h.classList.add('flex');
-      document.getElementById('headerEmail').textContent = email;
-    }
+  $('txBtn').disabled = !ok;
 
-    function logout() {
-      localStorage.removeItem('ch_token');
-      localStorage.removeItem('ch_email');
-      token = null;
-      document.getElementById('headerUser').classList.add('hidden');
-      document.getElementById('headerUser').classList.remove('flex');
-      showToast('Sesión cerrada', true);
-      showTab('auth');
-    }
+  // Resumen en vivo
+  $('rsMonto').textContent = money(monto);
+  $('rsDestino').textContent = transferMode === 'cuenta'
+    ? ($('txCuentaDestino').value || '—')
+    : ($('txCelularDestino').value || '—');
+  const resto = saldo - monto;
+  $('rsResto').textContent = monto > 0 ? money(resto >= 0 ? resto : 0) : money(saldo);
+}
 
-    // Rehydrate si ya hay sesión guardada
-    window.addEventListener('load', () => {
-      showTab('auth');
-      const saved = localStorage.getItem('ch_email');
-      if (token && saved) setLoggedIn(saved);
+async function transferir() {
+  if (!cuenta) { toast('No se encontró tu cuenta', 'err'); return; }
+  const monto = parseFloat($('txMonto').value);
+
+  const body = { cuentaOrigen: cuenta.numeroCuenta, monto };
+  if (transferMode === 'cuenta') body.cuentaDestino = $('txCuentaDestino').value;
+  else body.celularDestino = $('txCelularDestino').value;
+
+  $('txBtn').disabled = true; show($('txSpin')); $('txBtnText').textContent = 'Enviando…';
+  const r = await apiFetch('/api/operaciones/transferencia', 'POST', body);
+  hide($('txSpin')); $('txBtnText').textContent = 'Enviar dinero';
+
+  if (r.ok) {
+    const alerta = r.data.alertaAuditoria;
+    toast(`Transferencia de ${money(monto)} realizada ✓`, 'ok');
+    if (alerta) setTimeout(() => toast('Operación marcada para auditoría (≥ S/ 10,000)', 'info'), 800);
+    // Limpiar y refrescar saldo
+    $('txMonto').value = '';
+    $('txCuentaDestino').value = '';
+    $('txCelularDestino').value = '';
+    await loadProfileAndAccount();
+    renderDashboard();
+    validateTransfer();
+  } else {
+    // Mensajes claros según el error del backend
+    const msg = errMsg(r, 'No se pudo completar la transferencia.');
+    if (r.status === 422) { $('txMonto').classList.add('error'); show($('errMonto')); $('errMonto').textContent = msg; }
+    toast(msg, 'err');
+    $('txBtn').disabled = false;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  CRÉDITOS
+// ════════════════════════════════════════════════════════════════════════
+function setCredTipo(tipo) {
+  credTipo = tipo;
+  const isP = tipo === 'PERSONAL';
+  $('ctPersonal').className = `flex-1 py-2.5 text-sm font-semibold rounded-lg ${isP ? 'bg-white shadow-card text-brand' : 'text-graphite'}`;
+  $('ctPyme').className     = `flex-1 py-2.5 text-sm font-semibold rounded-lg ${!isP ? 'bg-white shadow-card text-brand' : 'text-graphite'}`;
+}
+
+async function evaluarCredito() {
+  if (!cliente) { toast('Carga tu perfil primero', 'err'); return; }
+  const body = {
+    clienteId:       cliente.id,
+    montoSolicitado: parseFloat($('credMonto').value),
+    plazoMeses:      parseInt($('credPlazo').value),
+    tipoCredito:     credTipo,
+  };
+  if (!body.montoSolicitado || body.montoSolicitado <= 0) return toast('Ingresa un monto válido', 'err');
+  if (!body.plazoMeses || body.plazoMeses < 1) return toast('Ingresa un plazo válido', 'err');
+
+  $('credBtn').disabled = true; show($('credSpin'));
+  const r = await apiFetch('/api/creditos/evaluar', 'POST', body);
+  $('credBtn').disabled = false; hide($('credSpin'));
+
+  const box = $('credResult'); show(box);
+  if (r.ok) {
+    const estado = r.data.estado || 'PROCESADO';
+    const styles = {
+      APROBADO:  { bg:'bg-emerald-50 border-emerald-200', text:'text-emerald-700', icon:'✅' },
+      RECHAZADO: { bg:'bg-brand-soft border-brand/20',    text:'text-brand-dark',  icon:'⛔' },
+      OBSERVADO: { bg:'bg-amber-50 border-amber-200',     text:'text-amber-700',   icon:'⚠️' },
+    }[estado] || { bg:'bg-canvas border-gray-200', text:'text-graphite', icon:'ℹ️' };
+    box.innerHTML = `
+      <div class="rounded-xl border ${styles.bg} p-4">
+        <div class="flex items-center gap-2 ${styles.text} font-bold">
+          <span class="text-lg">${styles.icon}</span><span>${estado}</span>
+        </div>
+        <p class="text-sm text-graphite/80 mt-2">${r.data.resultado || ''}</p>
+      </div>`;
+  } else {
+    box.innerHTML = `<div class="rounded-xl border border-brand/20 bg-brand-soft p-4 text-sm text-brand-dark">${errMsg(r,'Error al evaluar el crédito.')}</div>`;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  MONITOR SSE
+// ════════════════════════════════════════════════════════════════════════
+async function startSSE() {
+  if (!token) { toast('Inicia sesión primero', 'err'); return; }
+  stopSSE();
+  const log = $('sseLog'), dot = $('sseDot'), label = $('sseStatus');
+  dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-500'; dot.style.animation = 'pulseDot 1.2s infinite';
+  label.textContent = 'Conectado — esperando eventos…';
+  try {
+    const resp = await fetch(api() + '/api/auditoria/stream', {
+      headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'text/event-stream' }
     });
-
-    // ── Fetch helper ─────────────────────────────────────────────────
-    async function apiFetch(path, method = 'GET', body = null) {
-      const headers = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-      const opts = { method, headers };
-      if (body) opts.body = JSON.stringify(body);
-      const res = await fetch(api() + path, opts);
-      const text = await res.text();
-      let json;
-      try { json = JSON.parse(text); } catch { json = text; }
-      return { ok: res.ok, status: res.status, data: json };
+    if (!resp.ok) {
+      dot.className = 'w-2.5 h-2.5 rounded-full bg-brand'; dot.style.animation = '';
+      label.textContent = `Error ${resp.status} — se requiere rol AUDITOR`;
+      return;
     }
-
-    // ── AUTH ─────────────────────────────────────────────────────────
-    async function login() {
-      const email = document.getElementById('loginEmail').value.trim();
-      const pass  = document.getElementById('loginPass').value;
-      if (!email || !pass) { showToast('Completá email y contraseña', false); return; }
-      const r = await apiFetch('/api/auth/login', 'POST', { email, password: pass });
-      if (r.ok) {
-        localStorage.setItem('ch_token', r.data.token);
-        localStorage.setItem('ch_email', email);
-        token = r.data.token;
-        setLoggedIn(email);
-        showToast('¡Bienvenido, ' + email + '!');
-        responseBox('loginResp', r.data, true);
-      } else {
-        responseBox('loginResp', r.data, false);
-        showToast('Credenciales incorrectas', false);
-      }
-    }
-
-    async function registro() {
-      const body = {
-        email:             document.getElementById('regEmail').value.trim(),
-        password:          document.getElementById('regPass').value,
-        dni:               document.getElementById('regDni').value.trim(),
-        nombres:           document.getElementById('regNombres').value.trim(),
-        apellidos:         document.getElementById('regApellidos').value.trim(),
-        ingresosMensuales: parseFloat(document.getElementById('regIngresos').value) || 0,
-        edad:              parseInt(document.getElementById('regEdad').value) || 0,
-      };
-      if (!body.email || !body.password || !body.dni) {
-        showToast('Completá todos los campos obligatorios', false); return;
-      }
-      const r = await apiFetch('/api/auth/registro', 'POST', body);
-      if (r.ok) {
-        localStorage.setItem('ch_token', r.data.token);
-        localStorage.setItem('ch_email', body.email);
-        token = r.data.token;
-        setLoggedIn(body.email);
-        showToast('Cuenta creada exitosamente 🎉');
-        responseBox('regResp', r.data, true);
-      } else {
-        responseBox('regResp', r.data, false);
-        showToast(r.data?.message || 'Error en el registro', false);
-      }
-    }
-
-    // ── PERFIL ───────────────────────────────────────────────────────
-    async function getPerfil() {
-      if (!token) { showToast('Iniciá sesión primero', false); return; }
-      const r = await apiFetch('/api/perfil');
-      if (r.ok) {
-        const d = r.data;
-        document.getElementById('pDni').textContent     = d.dni;
-        document.getElementById('pNombre').textContent  = d.nombres + ' ' + d.apellidos;
-        document.getElementById('pEdad').textContent    = d.edad + ' años';
-        document.getElementById('pIngresos').textContent= 'S/ ' + d.ingresosMensuales?.toFixed(2);
-        document.getElementById('pId').textContent      = d.id;
-        document.getElementById('perfilCard').classList.remove('hidden');
-        document.getElementById('perfilResp').classList.add('hidden');
-        // Auto-fill créditos clienteId
-        document.getElementById('credClienteId').value = d.id;
-        showToast('Perfil cargado');
-      } else {
-        responseBox('perfilResp', r.data, false);
-        document.getElementById('perfilCard').classList.add('hidden');
-        showToast('No se pudo cargar el perfil', false);
-      }
-    }
-
-    // ── TRANSFERENCIA ─────────────────────────────────────────────────
-    async function transferir() {
-      if (!token) { showToast('Iniciá sesión primero', false); return; }
-      const body = {
-        cuentaOrigen:  document.getElementById('txOrigen').value.trim(),
-        cuentaDestino: document.getElementById('txDestino').value.trim(),
-        monto:         parseFloat(document.getElementById('txMonto').value),
-      };
-      if (!body.cuentaOrigen || !body.cuentaDestino || !body.monto) {
-        showToast('Completá todos los campos', false); return;
-      }
-      const r = await apiFetch('/api/operaciones/transferencia', 'POST', body);
-      responseBox('txResp', r.data, r.ok);
-      showToast(r.ok ? `Transferencia de S/ ${body.monto} completada ✓` : 'Error en la transferencia', r.ok);
-    }
-
-    // ── CRÉDITOS ─────────────────────────────────────────────────────
-    async function evaluarCredito() {
-      if (!token) { showToast('Iniciá sesión primero', false); return; }
-      const body = {
-        clienteId:       document.getElementById('credClienteId').value.trim(),
-        montoSolicitado: parseFloat(document.getElementById('credMonto').value),
-        plazoMeses:      parseInt(document.getElementById('credPlazo').value),
-        tipoCredito:     document.getElementById('credTipo').value,
-      };
-      if (!body.clienteId || !body.montoSolicitado) {
-        showToast('Completá clienteId y monto', false); return;
-      }
-      const r = await apiFetch('/api/creditos/evaluar', 'POST', body);
-      responseBox('credResp', r.data, r.ok);
-      if (r.ok) {
-        const estado = r.data.estado;
-        const colors = { APROBADO: true, RECHAZADO: false, OBSERVADO: null };
-        showToast(estado + ': ' + (r.data.resultado?.substring(0, 60) || ''), colors[estado] ?? true);
-      } else {
-        showToast('Error al evaluar crédito', false);
-      }
-    }
-
-    // ── SSE AUDITORÍA ─────────────────────────────────────────────────
-    async function startSSE() {
-      if (!token) { showToast('Iniciá sesión con rol AUDITOR primero', false); return; }
-      stopSSE();
-      const log   = document.getElementById('sseLog');
-      const dot   = document.getElementById('sseDot');
-      const label = document.getElementById('sseStatus');
-      dot.className   = 'w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse';
-      label.textContent = 'Conectado — esperando eventos...';
-      try {
-        const resp = await fetch(api() + '/api/auditoria/stream', {
-          headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'text/event-stream' }
-        });
-        if (!resp.ok) {
-          dot.className = 'w-2.5 h-2.5 rounded-full bg-red-500';
-          label.textContent = 'Error ' + resp.status + ' — ¿tenés rol AUDITOR?';
-          return;
+    sseReader = resp.body.getReader();
+    const dec = new TextDecoder(); let buf = '';
+    const read = async () => {
+      while (true) {
+        const { done, value } = await sseReader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        const parts = buf.split('\n\n'); buf = parts.pop();
+        for (const part of parts) {
+          const dl = part.split('\n').find(l => l.startsWith('data:'));
+          if (!dl) continue;
+          try {
+            const evt = JSON.parse(dl.replace(/^data:\s*/, ''));
+            const alert = evt.tipo === 'ALERTA_MONTO_ALTO';
+            const div = document.createElement('div');
+            div.className = 'fade-in ' + (alert ? 'text-amber-400' : 'text-emerald-400');
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${evt.tipo} · ${evt.cuentaOrigen} → ${evt.cuentaDestino} · ${money(evt.monto)}`;
+            log.appendChild(div); log.scrollTop = log.scrollHeight;
+          } catch {}
         }
-        sseReader = resp.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-        const read = async () => {
-          while (true) {
-            const { done, value } = await sseReader.read();
-            if (done) break;
-            buffer += decoder.decode(value, { stream: true });
-            const parts = buffer.split('\n\n');
-            buffer = parts.pop();
-            for (const part of parts) {
-              const dataLine = part.split('\n').find(l => l.startsWith('data:'));
-              if (!dataLine) continue;
-              const json = dataLine.replace(/^data:\s*/, '');
-              try {
-                const evt = JSON.parse(json);
-                const isAlert = evt.tipo === 'ALERTA_MONTO_ALTO';
-                const div = document.createElement('div');
-                div.className = 'sse-event ' + (isAlert ? 'text-yellow-400' : 'text-green-400');
-                div.textContent = `[${new Date().toLocaleTimeString()}] ${evt.tipo} | ${evt.cuentaOrigen} → ${evt.cuentaDestino} | S/ ${evt.monto}`;
-                log.appendChild(div);
-                log.scrollTop = log.scrollHeight;
-              } catch {}
-            }
-          }
-          dot.className = 'w-2.5 h-2.5 rounded-full bg-gray-400';
-          label.textContent = 'Desconectado';
-        };
-        read();
-      } catch (e) {
-        dot.className = 'w-2.5 h-2.5 rounded-full bg-red-500';
-        label.textContent = 'Error de conexión: ' + e.message;
       }
-    }
+      dot.className = 'w-2.5 h-2.5 rounded-full bg-gray-300'; dot.style.animation = '';
+      label.textContent = 'Desconectado';
+    };
+    read();
+  } catch (e) {
+    dot.className = 'w-2.5 h-2.5 rounded-full bg-brand'; dot.style.animation = '';
+    label.textContent = 'Error de conexión: ' + e.message;
+  }
+}
 
-    function stopSSE() {
-      if (sseReader) { sseReader.cancel(); sseReader = null; }
-      document.getElementById('sseDot').className    = 'w-2.5 h-2.5 rounded-full bg-gray-400';
-      document.getElementById('sseStatus').textContent = 'Desconectado';
-    }
-  </script>
+function stopSSE() {
+  if (sseReader) { try { sseReader.cancel(); } catch {} sseReader = null; }
+  $('sseDot').className = 'w-2.5 h-2.5 rounded-full bg-gray-300'; $('sseDot').style.animation = '';
+  $('sseStatus').textContent = 'Desconectado';
+}
+
+// ════════════════════════════════════════════════════════════════════════
+//  ARRANQUE
+// ════════════════════════════════════════════════════════════════════════
+window.addEventListener('load', async () => {
+  setAuthMode('login');
+  // Limpia el estado de error de los inputs al escribir
+  document.querySelectorAll('.field').forEach(el =>
+    el.addEventListener('input', () => el.classList.remove('error')));
+
+  // Rehidratar sesión si hay token válido
+  if (token) {
+    const ok = await loadProfileAndAccount();
+    if (ok) { renderHeader(); renderDashboard(); hide($('authView')); show($('appView')); nav('dashboard'); }
+    else { token = null; localStorage.removeItem('ch_token'); }
+  }
+});
+</script>
 </body>
 </html>
